@@ -4,7 +4,7 @@
 
 extends Node3D
 
-@onready var model_instance: Node3D = $characterMedium  # Adjust to your imported node's name.
+@onready var model_instance: Node3D = get_node_or_null("characterMedium")  # Use get_node_or_null instead
 
 # Function to set position offset for board riding.
 # @param offset: Vector3 - Adjustment for feet-on-board (e.g., Vector3(0, board_height + 0.1, 0)).
@@ -16,5 +16,7 @@ func set_position_offset(offset: Vector3) -> void:
 	print("Applied offset: " + str(offset))  # Debug vibe.
 
 func _ready() -> void:
-	# Default offset - tweak based on your hoverboard.glb scale.
-	set_position_offset(Vector3(0, 0.1, 0))  # Small y-up for floating hover feel.
+	if model_instance:
+		set_position_offset(Vector3(0, 0.1, 0))
+	else:
+		print("Warning: characterMedium node not found in avatar")

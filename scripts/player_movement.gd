@@ -30,8 +30,31 @@ var input_actions := {
 	"dodge_right": "dodge_right" # Custom for E (right dodge burst).
 }
 
-# Add this new var for Cadence reference (set in _ready).
-@onready var cadence_bar: ProgressBar = get_node("/root/BasicTrackRoot/UI/CadenceBar")  # Path to your ProgressBar.
+# Node references with error checking
+@onready var cadence_bar: ProgressBar = get_node("/root/BasicTrackRoot/UI/CadenceBar")
+var trail: MeshInstance3D  # Will be set in _ready() with error checking
+
+func _ready() -> void:
+	# Search recursively for the Trail node
+	trail = find_trail_recursive(self)
+	if trail:
+		print("Found trail at path: ", get_path_to(trail))
+	else:
+		print("Trail not found anywhere in the scene tree")
+
+# Recursive function to find Trail node anywhere in the tree
+func find_trail_recursive(node: Node) -> MeshInstance3D:
+	# Check if this node is the trail
+	if node is MeshInstance3D and node.name == "Trail":
+		return node
+	
+	# Check all children recursively
+	for child in node.get_children():
+		var result = find_trail_recursive(child)
+		if result:
+			return result
+	
+	return null
 
 # Function to get turn input direction.
 # Returns: float - -1 (left), 0 (none), 1 (right).
@@ -129,6 +152,28 @@ func handle_bail() -> void:
 	cadence_bar.update_bar()
 	# TODO: Add respawn or stun effect (e.g., reset position/velocity).
 
+# Function to update trail based on cadence.
+# Called every frame to sync trail length and glow with speed.
+func update_trail() -> void:
+	if not trail or not cadence_bar:
+		return
+	
+	var norm_cadence = cadence_bar.current_cadence / cadence_bar.MAX_CADENCE
+	
+	# Make scaling more dramatic (0.1x to 5x length)
+	trail.scale.z = lerp(0.1, 100.0, norm_cadence)
+	
+	# Make sure trail is visible
+	trail.visible = true
+	
+	# Fade trail opacity with cadence
+	if trail.material_override:
+		trail.material_override.albedo_color.a = lerp(0.5, 1.0, norm_cadence)
+		
+		# Change color intensity for glow effect
+		var glow_intensity = lerp(1.0, 3.0, norm_cadence)
+		trail.material_override.emission = Color(0, 1, 1) * glow_intensity
+
 func _physics_process(delta: float) -> void:
 	if not is_on_floor() and velocity.y == 0 and not is_jumping:  # Rare edge case check (ignore during jumps).
 		push_error("Physics error: Not on floor with zero Y velocity.")
@@ -154,3 +199,6 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()  # Apply velocity with collisions.
 	
 	handle_collisions(get_slide_collision_count())  # Check for grinds/bails post-slide.
+
+func _process(_delta: float) -> void:
+	update_trail()

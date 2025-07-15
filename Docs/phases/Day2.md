@@ -13,12 +13,12 @@
 - [X] Link the Cadence bar value to the player's speed variable in the movement script.
 
 ### Add Jumps, Grinds, and Bails
-- [ ] Set up input detection for jump action and apply physics impulse to the player board.
-- [ ] Implement grind detection using raycasts or collision areas on grindable surfaces.
-- [ ] Add bail logic: Detect collisions with hazards or failed landings, reset Cadence bar.
+- [X] Set up input detection for jump action and apply physics impulse to the player board.
+- [X] Implement grind detection using raycasts or collision areas on grindable surfaces.
+- [X] Add bail logic: Detect collisions with hazards or failed landings, reset Cadence bar.
 
 ### Add Basic Visuals
-- [ ] Apply cel-shading materials to player models and track elements.
+- [X] Apply cel-shading materials to player models and track elements.
 - [ ] Create trail effects using ParticleProcessMaterial or Line2D nodes.
 
 ### Test FPS
