@@ -17,6 +17,7 @@ const GRAVITY: float = -9.8
 # Descriptive state vars.
 var current_speed: float = 0.0
 var is_jumping: bool = false
+var is_grinding: bool = false  # Tracks if currently grinding on a rail.
 var dodge_cooldowns := { "left": 0.0, "right": 0.0 }  # Timers for each dodge direction.
 
 # Map for input actions (expandable, no enums).
@@ -29,6 +30,9 @@ var input_actions := {
 	"dodge_right": "dodge_right" # Custom for E (right dodge burst).
 }
 
+# Add this new var for Cadence reference (set in _ready).
+@onready var cadence_bar: ProgressBar = get_node("/root/BasicTrackRoot/UI/CadenceBar")  # Path to your ProgressBar.
+
 # Function to get turn input direction.
 # Returns: float - -1 (left), 0 (none), 1 (right).
 func get_turn_input() -> float:
@@ -39,17 +43,26 @@ func get_turn_input() -> float:
 		turn_direction += 1.0
 	return turn_direction
 
-# Function to handle acceleration and velocity.
+# Function to handle acceleration and velocity (updated for additive boost).
 # @param delta: float - Time since last physics frame.
 func apply_acceleration(delta: float) -> void:
+	if not cadence_bar:
+		push_error("Cadence bar not found - check node path.")
+		return
+	
+	# Base acceleration (from Day 1) – build speed independently of Cadence.
 	if Input.is_action_pressed(input_actions["forward"]):
 		current_speed = min(current_speed + ACCELERATION * delta, MAX_SPEED)
 	else:
 		current_speed = max(current_speed - ACCELERATION * delta, 0.0)  # Decelerate.
 	
+	# Apply Cadence as an additive boost (up to +MAX_SPEED at 100%).
+	var cadence_boost: float = (cadence_bar.current_cadence / 100.0) * MAX_SPEED  # 0 to MAX_SPEED extra.
+	var boosted_speed: float = current_speed + cadence_boost
+	
 	var forward_direction := -global_transform.basis.z.normalized()  # Board forward.
-	velocity.x = forward_direction.x * current_speed
-	velocity.z = forward_direction.z * current_speed
+	velocity.x = forward_direction.x * boosted_speed
+	velocity.z = forward_direction.z * boosted_speed
 
 # Function to apply turning (rotation).
 # @param delta: float - Time since last physics frame.
@@ -70,17 +83,51 @@ func apply_dodge(direction: float) -> void:
 	velocity += right_direction * direction * effective_strength
 	dodge_cooldowns[cooldown_key] = DODGE_COOLDOWN  # Start cooldown.
 
-# Function to apply gravity and jumping.
+# Function to apply gravity and jumping (updated to handle grind exit on jump).
 # @param delta: float - Time since last physics frame.
 func apply_gravity_and_jump(delta: float) -> void:
+	if is_grinding:
+		velocity.y = 0.0  # No gravity/fall during grind (basic lock-in).
+		return
+	
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
 		is_jumping = false  # Reset on land.
 	
-	if Input.is_action_just_pressed(input_actions["jump"]) and is_on_floor():
-		velocity.y = JUMP_VELOCITY
-		is_jumping = true
+	if Input.is_action_just_pressed(input_actions["jump"]):
+		if is_grinding:
+			is_grinding = false  # Exit grind on jump.
+		if is_on_floor() or is_grinding:  # Allow jump from ground or grind.
+			velocity.y = JUMP_VELOCITY
+			is_jumping = true
+
+# Function to check for grind/hazard collisions after move_and_slide().
+# Handles detection and state changes.
+# @param collision_count: int - Number of slide collisions this frame.
+func handle_collisions(collision_count: int) -> void:
+	is_grinding = false  # Reset each frame; re-detect if still valid.
+	
+	for i in collision_count:
+		var collision = get_slide_collision(i)
+		var collider = collision.get_collider()
+		if not collider: continue
+		
+		if collider.is_in_group("grindable") and not is_on_floor():
+			is_grinding = true  # Start/continue grinding if off-ground and hitting rail.
+			# Basic reward: Boost cadence slightly (tweak value for balance).
+			cadence_bar.current_cadence = min(cadence_bar.current_cadence + 5.0, cadence_bar.max_value)
+			cadence_bar.update_bar()
+			break  # Only grind one rail at a time.
+		
+		if collider.is_in_group("hazard"):
+			handle_bail()  # Trigger bail on hazard hit.
+
+# Function for bail logic (resets cadence, could add respawn later).
+func handle_bail() -> void:
+	cadence_bar.current_cadence = 0.0
+	cadence_bar.update_bar()
+	# TODO: Add respawn or stun effect (e.g., reset position/velocity).
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor() and velocity.y == 0 and not is_jumping:  # Rare edge case check (ignore during jumps).
@@ -105,3 +152,5 @@ func _physics_process(delta: float) -> void:
 	apply_gravity_and_jump(delta)
 	
 	move_and_slide()  # Apply velocity with collisions.
+	
+	handle_collisions(get_slide_collision_count())  # Check for grinds/bails post-slide.

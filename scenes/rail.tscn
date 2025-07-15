@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://b35ey66ytyca2"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_75rk3"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pgmc8"]
+
+[node name="Rail" type="StaticBody3D" groups=["grindable"]]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0)
+
+[node name="RailMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0, 0)
+mesh = SubResource("BoxMesh_75rk3")
+
+[node name="RailCollisions" type="CollisionShape3D" parent="."]
+transform = Transform3D(10, 0, 0, 0, 0.4, 0, 0, 0, 0.4, 0.00869904, 0, -0.00475235)
+shape = SubResource("BoxShape3D_pgmc8")

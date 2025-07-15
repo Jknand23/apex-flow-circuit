@@ -19,6 +19,11 @@ config/icon="res://icon.svg"
 
 window/size/mode=3
 
+[global_group]
+
+hazard="Collision obstacles"
+grindable=""
+
 [input]
 
 move_forward={

@@ -1,7 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://doui6nhxgvl74"]
+[gd_scene load_steps=13 format=3 uid="uid://doui6nhxgvl74"]
 
 [ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
 [ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
+[ext_resource type="Script" path="res://scripts/cadence_manager.gd" id="3_nvx5r"]
+[ext_resource type="PackedScene" uid="uid://b35ey66ytyca2" path="res://scenes/rail.tscn" id="4_m7q0a"]
+[ext_resource type="PackedScene" uid="uid://dl6meropkaki4" path="res://scenes/hazard.tscn" id="5_sak65"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_efcfb"]
 size = Vector2(50, 50)
@@ -30,6 +33,9 @@ sky = SubResource("Sky_x4dpy")
 ambient_light_source = 3
 ambient_light_energy = 0.5
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3fo6q"]
+bg_color = Color(0, 0.629829, 0.979454, 1)
+
 [node name="BasicTrackRoot" type="Node3D"]
 
 [node name="TrackPlane" type="StaticBody3D" parent="."]
@@ -56,6 +62,30 @@ transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0.1, 0)
 transform = Transform3D(10, 0, 0, 0, 9.65926, 2.58819, 0, -2.58819, 9.65926, 0, 17.4024, 25.4062)
 current = true
 script = ExtResource("1_yns16")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="CadenceBar" type="ProgressBar" parent="UI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1565.0
+offset_top = -232.0
+offset_right = 535.0
+offset_bottom = -86.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(0.5, 0.5)
+theme_override_styles/fill = SubResource("StyleBoxFlat_3fo6q")
+value = 50.0
+script = ExtResource("3_nvx5r")
+
+[node name="Rail" parent="." instance=ExtResource("4_m7q0a")]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 7.16092, -0.0180209, 3.58401)
+
+[node name="Hazard" parent="." instance=ExtResource("5_sak65")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.17575, 0.587943, -7.89281)
 
 [editable path="PlayerBoard"]
 [editable path="PlayerBoard/Basic Hoverboard"]
