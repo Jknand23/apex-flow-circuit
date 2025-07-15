@@ -68,7 +68,7 @@
     - Create or update a log in Docs/ (e.g., LearningLog.md).
     - Entry: "Learned via Godot docs and AI prompts; clarified Node hierarchy and basic 3D setup."
 
-- [ ] **Commit Changes**:
+- [x] **Commit Changes**:
     - Use Git to commit: "Day 1: Project setup, basic controllable board with avatar."
     - Push to repo if using version control.
 
