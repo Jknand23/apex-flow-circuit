@@ -1,19 +1,18 @@
-[gd_scene load_steps=13 format=3 uid="uid://doui6nhxgvl74"]
+[gd_scene load_steps=12 format=3 uid="uid://doui6nhxgvl74"]
 
 [ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
 [ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
 [ext_resource type="Script" path="res://scripts/cadence_manager.gd" id="3_nvx5r"]
-[ext_resource type="PackedScene" uid="uid://b35ey66ytyca2" path="res://scenes/rail.tscn" id="4_m7q0a"]
-[ext_resource type="PackedScene" uid="uid://dl6meropkaki4" path="res://scenes/hazard.tscn" id="5_sak65"]
+[ext_resource type="PackedScene" uid="uid://dt6rh24xje6hg" path="res://scenes/city_environment.tscn" id="6_yec2s"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_efcfb"]
 size = Vector2(50, 50)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5pkox"]
-albedo_color = Color(0, 1, 1, 1)
+albedo_color = Color(0.501961, 0.501961, 0.501961, 1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_track_collision"]
-size = Vector3(50, 1, 50)
+size = Vector3(50, 0.001, 50)
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_15ict"]
 sky_top_color = Color(0.2, 0.6, 1, 1)
@@ -37,26 +36,29 @@ ambient_light_energy = 0.5
 bg_color = Color(0, 0.629829, 0.979454, 1)
 
 [node name="BasicTrackRoot" type="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.127975, -1.90735e-06, 0.0527763)
 
 [node name="TrackPlane" type="StaticBody3D" parent="."]
 
 [node name="TrackMesh" type="MeshInstance3D" parent="TrackPlane"]
+transform = Transform3D(14, 0, 0, 0, 6, 0, 0, 0, 9, 0.00720978, 0.0379858, 0.0064621)
 mesh = SubResource("PlaneMesh_efcfb")
 surface_material_override/0 = SubResource("StandardMaterial3D_5pkox")
 
 [node name="TrackCollision" type="CollisionShape3D" parent="TrackPlane"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+transform = Transform3D(14, 0, 0, 0, 14, 0, 0, 0, 14, 0, 0, 0)
 shape = SubResource("BoxShape3D_track_collision")
 
 [node name="SunLight" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0.0485344, 118.397, -0.0273361)
 light_color = Color(0.956863, 0.913725, 0.54902, 1)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_s0b1v")
 
 [node name="PlayerBoard" parent="." instance=ExtResource("2_4e1l4")]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0.1, 0)
+transform = Transform3D(-4.37114e-09, 0, 0.1, 0, 0.1, 0, -0.1, 0, -4.37114e-09, 113, 0.25, 1.5)
+floor_stop_on_slope = false
 
 [node name="MainCamera" type="Camera3D" parent="PlayerBoard"]
 transform = Transform3D(10, 0, 0, 0, 9.65926, 2.58819, 0, -2.58819, 9.65926, 0, 17.4024, 25.4062)
@@ -81,11 +83,8 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_3fo6q")
 value = 50.0
 script = ExtResource("3_nvx5r")
 
-[node name="Rail" parent="." instance=ExtResource("4_m7q0a")]
-transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 7.16092, -0.0180209, 3.58401)
-
-[node name="Hazard" parent="." instance=ExtResource("5_sak65")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.17575, 0.587943, -7.89281)
+[node name="CityEnvironment" parent="." instance=ExtResource("6_yec2s")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.02562, 0.160931, 1.5061)
 
 [editable path="PlayerBoard"]
 [editable path="PlayerBoard/Basic Hoverboard"]

@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://bguok2j2qcy4w"]
+
+[ext_resource type="Script" path="res://scripts/gravity_flip_zone.gd" id="1_m45s4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_uaq6h"]
+size = Vector3(10, 2, 50)
+
+[node name="GravityFlipZone" type="Area3D"]
+script = ExtResource("1_m45s4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_uaq6h")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"] 
