@@ -1,3 +1,26 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Editor/IDE directories
+.vscode/
+.idea/
+.cursor/
+
+# Export directories (if not versioning builds)
+/export/
+
+# Other common ignores
+*.log
+node_modules/
+
+# Note: .import files should be committed for asset consistency across clones.
