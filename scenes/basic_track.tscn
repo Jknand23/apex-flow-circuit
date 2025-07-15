@@ -1,0 +1,61 @@
+[gd_scene load_steps=9 format=3 uid="uid://doui6nhxgvl74"]
+
+[ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
+[ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_efcfb"]
+size = Vector2(50, 50)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5pkox"]
+albedo_color = Color(0, 1, 1, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_track_collision"]
+size = Vector3(50, 1, 50)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_15ict"]
+sky_top_color = Color(0.2, 0.6, 1, 1)
+sky_horizon_color = Color(0.6, 0.2, 1, 1)
+sky_energy_multiplier = 1.5
+ground_bottom_color = Color(0.1, 0.1, 0.1, 1)
+ground_horizon_color = Color(0.6, 0.2, 1, 1)
+sun_angle_max = 45.0
+sun_curve = 0.05
+
+[sub_resource type="Sky" id="Sky_x4dpy"]
+sky_material = SubResource("ProceduralSkyMaterial_15ict")
+
+[sub_resource type="Environment" id="Environment_s0b1v"]
+background_mode = 2
+sky = SubResource("Sky_x4dpy")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+
+[node name="BasicTrackRoot" type="Node3D"]
+
+[node name="TrackPlane" type="StaticBody3D" parent="."]
+
+[node name="TrackMesh" type="MeshInstance3D" parent="TrackPlane"]
+mesh = SubResource("PlaneMesh_efcfb")
+surface_material_override/0 = SubResource("StandardMaterial3D_5pkox")
+
+[node name="TrackCollision" type="CollisionShape3D" parent="TrackPlane"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_track_collision")
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+light_color = Color(0.956863, 0.913725, 0.54902, 1)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_s0b1v")
+
+[node name="PlayerBoard" parent="." instance=ExtResource("2_4e1l4")]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0.1, 0)
+
+[node name="MainCamera" type="Camera3D" parent="PlayerBoard"]
+transform = Transform3D(10, 0, 0, 0, 9.65926, 2.58819, 0, -2.58819, 9.65926, 0, 17.4024, 25.4062)
+current = true
+script = ExtResource("1_yns16")
+
+[editable path="PlayerBoard"]
+[editable path="PlayerBoard/Basic Hoverboard"]

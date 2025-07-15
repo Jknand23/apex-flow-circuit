@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://bpmobuncjl8it"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_cnfhj"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0c4v8"]
+ground_bottom_color = Color(0.235733, 0.158565, 0.017444, 1)
+ground_horizon_color = Color(0.419496, 0.682844, 0.898052, 1)
+sun_angle_max = 360.0
+
+[sub_resource type="Sky" id="Sky_y24vd"]
+sky_material = SubResource("ProceduralSkyMaterial_0c4v8")
+
+[sub_resource type="Environment" id="Environment_pt636"]
+background_mode = 2
+sky = SubResource("Sky_y24vd")
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 5)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_cnfhj")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_pt636")
