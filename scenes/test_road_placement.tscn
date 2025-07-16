@@ -1,0 +1,48 @@
+[gd_scene load_steps=6 format=3 uid="uid://b8k9t5x2l3n4m"]
+
+[ext_resource type="PackedScene" uid="uid://dgm8vx4k2a5t2" path="res://scenes/prefabs/roads/road_straight_ready.tscn" id="1_straight"]
+[ext_resource type="PackedScene" uid="uid://c2yt8vx9k5p1m" path="res://scenes/prefabs/roads/road_curve_ready.tscn" id="2_curve"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_test"]
+sky_top_color = Color(0.2, 0.6, 1, 1)
+sky_horizon_color = Color(0.6, 0.2, 1, 1)
+
+[sub_resource type="Sky" id="Sky_test"]
+sky_material = SubResource("ProceduralSkyMaterial_test")
+
+[sub_resource type="Environment" id="Environment_test"]
+background_mode = 2
+sky = SubResource("Sky_test")
+ambient_light_source = 3
+ambient_light_energy = 0.3
+
+[node name="TestRoadPlacement" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 5, 10)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 5, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_test")
+
+[node name="RoadLayout" type="Node3D" parent="."]
+
+[node name="StraightRoad1" parent="RoadLayout" instance=ExtResource("1_straight")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="StraightRoad2" parent="RoadLayout" instance=ExtResource("1_straight")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+
+[node name="CurveRoad1" parent="RoadLayout" instance=ExtResource("2_curve")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5, 0, 10)
+
+[node name="Instructions" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2, -5)
+text = "Road Placement Test Scene
+- Drag road prefabs from scenes/prefabs/roads/
+- Use Transform controls to position
+- Snap to grid for alignment
+- Check collision with player"
+modulate = Color(0, 1, 0, 1) 

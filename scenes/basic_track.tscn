@@ -1,9 +1,18 @@
-[gd_scene load_steps=12 format=3 uid="uid://doui6nhxgvl74"]
+[gd_scene load_steps=21 format=3 uid="uid://doui6nhxgvl74"]
 
 [ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
 [ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
 [ext_resource type="Script" path="res://scripts/cadence_manager.gd" id="3_nvx5r"]
+[ext_resource type="PackedScene" uid="uid://sturkt7avf8s" path="res://scenes/jump_pad.tscn" id="5_60mr4"]
+[ext_resource type="PackedScene" uid="uid://yjrgbelhsc4k" path="res://assets/models/environments/roads/road-slant-high.glb" id="5_uvywg"]
+[ext_resource type="PackedScene" uid="uid://cps87ednh8jss" path="res://assets/models/environments/roads/tile-high.glb" id="6_1uwgu"]
 [ext_resource type="PackedScene" uid="uid://dt6rh24xje6hg" path="res://scenes/city_environment.tscn" id="6_yec2s"]
+[ext_resource type="PackedScene" uid="uid://b8o1xpmnshmi4" path="res://assets/models/environments/roads/road-straight.glb" id="7_6qu7l"]
+[ext_resource type="PackedScene" uid="uid://cnd4m3fo672kw" path="res://assets/models/environments/roads/road-curve.glb" id="8_6rtek"]
+[ext_resource type="PackedScene" uid="uid://crbg2wakyjgqo" path="res://assets/models/environments/roads/road-slant-flat-high.glb" id="8_83u0k"]
+[ext_resource type="PackedScene" uid="uid://bg3mpc0cebbnm" path="res://assets/models/environments/roads/road-slant-flat.glb" id="10_cbyf8"]
+[ext_resource type="PackedScene" uid="uid://dcj5t6laea8c3" path="res://assets/models/environments/roads/tile-low.glb" id="11_e6bp4"]
+[ext_resource type="PackedScene" uid="uid://c7p062hnd0oxv" path="res://assets/models/environments/roads/tile-slant.glb" id="13_385o8"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_efcfb"]
 size = Vector2(50, 50)
@@ -84,7 +93,148 @@ value = 50.0
 script = ExtResource("3_nvx5r")
 
 [node name="CityEnvironment" parent="." instance=ExtResource("6_yec2s")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.02562, 0.160931, 1.5061)
+transform = Transform3D(0.999912, -0.0132467, 0, 0.0132467, 0.999912, 0, 0, 0, 1, -5.02562, 0.160931, 1.5061)
+
+[node name="road-straight6" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(17, 1.49012e-07, 0, -2.08616e-07, 12, 0, 0, 0, 12, 21.5664, 35.4785, -104.472)
+
+[node name="road-slant-high3" parent="CityEnvironment" instance=ExtResource("5_uvywg")]
+transform = Transform3D(1, 3.35276e-08, 0, -1.67638e-08, 2, 0, 0, 0, 12, 29.3365, 35.7223, -104.486)
+
+[node name="road-curve10" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-12, 0, -1.04907e-06, 0, 12, 0, 1.04907e-06, 0, -12, 1.11051, 35.5023, -110.47)
+
+[node name="road-curve9" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(12, 1.49012e-07, 0, -1.49012e-07, 12, 0, 0, 0, 12, -10.8859, 35.5199, -134.293)
+
+[node name="road-straight5" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(11.9927, 0, 0.418794, 0, 12, 0, -0.418794, 0, 11.9927, -28.6244, 35.5254, -140.109)
+
+[node name="road-curve8" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-5.24537e-07, 1.49012e-08, 12, 2.66454e-15, 12, -1.49012e-08, -12, 1.88291e-15, -5.24537e-07, -46.4472, 35.5231, -133.913)
+
+[node name="road-straight3" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(24.8137, -1.49012e-08, -1.46243, 2.98023e-08, 12, 3.72529e-09, 3.04673, -2.86922e-09, 11.9106, -22.9605, 35.6033, -90.6068)
+
+[node name="road-straight4" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(-5.24537e-07, 0, 12, 0, 12, 0, -12, 0, -5.24537e-07, -52.4683, 35.5542, -116.021)
+
+[node name="road-curve7" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-12, 0, 1.04907e-06, 0, 12, 0, -1.04907e-06, 0, -12, -46.4732, 35.5581, -98.0694)
+
+[node name="road-curve5" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(11.9343, 0, -1.25434, 0, 12, 1.86265e-09, 1.25434, 0, 11.9343, 0.479458, 35.6352, -81.8858)
+
+[node name="road-curve6" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(1, 2.79397e-09, 0, -2.79397e-09, 1, 0, 0, 0, 1, 0.433509, 32.723, 30.5279)
+
+[node name="road-curve11" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(1.81513, 2.98023e-08, -14.8274, -1.86265e-09, 9, 1.49012e-08, 11.8619, 9.57352e-10, 2.26891, -4.93821, 35.7666, 21.8161)
+
+[node name="road-curve12" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-10, 2.98023e-08, -1.50996e-06, 2.98023e-08, 10, 7.10543e-15, 1.50996e-06, -5.9207e-16, -10, -36.6917, 36.5303, 48.1394)
+
+[node name="road-curve13" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-3.93403e-07, 2.98023e-08, 9, 1.33227e-15, 9, -2.98023e-08, -9, 6.12826e-16, -3.93403e-07, -37.2145, 36.5188, 29.1813)
+
+[node name="road-slant-high4" parent="CityEnvironment" instance=ExtResource("5_uvywg")]
+transform = Transform3D(4, 5.58794e-08, 0, -5.58794e-08, 4, 0, 0, 0, 4, -26.6761, 36.4517, 26.7177)
+
+[node name="road-straight2" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(-4.04743, 0, -11.9846, -7.45058e-09, 12, -4.47035e-08, 79.8975, 5.58078e-10, -0.607115, 3.20243, 35.6333, -29.808)
+
+[node name="road-curve3" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-2.18557e-07, 7.82311e-08, 10, 4.66294e-15, 4, -1.63913e-07, -5, 2.81178e-16, -4.37114e-07, 3.56221, 39.4633, 33.3249)
+
+[node name="road-curve4" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-4.37114e-07, 3.35276e-08, -10, 1.33227e-15, 4, 7.45058e-08, 10, 9.77026e-16, -4.37114e-07, -6.4257, 39.4556, 48.1535)
+
+[node name="tile-slant3" parent="CityEnvironment/road-curve4" instance=ExtResource("13_385o8")]
+transform = Transform3D(-4.37114e-08, 1, 2.13163e-14, -1, -4.37114e-08, -3.72529e-09, -1.86264e-09, -1.77636e-14, 1.4, -1.1999, -0.344237, 1.25403)
+
+[node name="tile-slant2" parent="CityEnvironment/road-curve4" instance=ExtResource("13_385o8")]
+transform = Transform3D(4.37114e-08, -1, 3.4729e-07, -1, -4.37114e-08, 1.49012e-08, -2.32831e-09, -1.50996e-07, -2.3, 0.968506, -0.362025, 0.808274)
+
+[node name="road-slant-flat-high3" parent="CityEnvironment" instance=ExtResource("8_83u0k")]
+transform = Transform3D(9.79575, 2.01078, 0, -2.01078, 9.79575, 0, 0, 0, 10, -22.3082, 35.4858, 53.1147)
+
+[node name="road-slant-high2" parent="CityEnvironment" instance=ExtResource("5_uvywg")]
+transform = Transform3D(-7, 0, -6.11959e-07, 0, 7, 0, 6.11959e-07, 0, -7, 65.8336, -1.14513, 0.213001)
+
+[node name="tile-high3" parent="CityEnvironment" instance=ExtResource("6_1uwgu")]
+transform = Transform3D(7, -1.49012e-08, 0, 7.45058e-09, 12, 0, 0, 0, 7, 51.9736, -0.716732, 0.176774)
+
+[node name="road-straight2" parent="CityEnvironment/tile-high3" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(1, -1.86265e-09, 0, 1.39698e-09, 0.875, 0, 0, 0, 1, 0.000337124, 0.248396, 0)
+
+[node name="tile-high4" parent="CityEnvironment" instance=ExtResource("6_1uwgu")]
+transform = Transform3D(7, -1.49012e-08, 0, 7.45058e-09, 12, 0, 0, 0, 7, 44.9809, -0.816891, 0.193254)
+
+[node name="tile-high2" parent="CityEnvironment" instance=ExtResource("6_1uwgu")]
+transform = Transform3D(7, 0, 0, 0, 12, 0, 0, 0, 7, 58.8376, -0.696804, 0.207535)
+
+[node name="road-straight2" parent="CityEnvironment/tile-high2" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(1, -1.86265e-09, 0, 4.65661e-10, 0.875, 0, 0, 0, 1, 0.000336647, 0.248396, 0)
+
+[node name="road-slant-flat-high2" parent="CityEnvironment" instance=ExtResource("8_83u0k")]
+transform = Transform3D(-2.18557e-07, 0, -5, 1.11022e-15, 5, 0, 5, 0, -2.18557e-07, 41.8073, 2.26407, 12.9316)
+
+[node name="road-slant-flat-high2" parent="CityEnvironment/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(1, 0, 0, 4.44089e-17, 1, 7.7647e-24, 1.42109e-14, 0, 1, 1, 0.499733, -0.000457764)
+
+[node name="road-straight3" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(-4.37114e-08, 0, 1, 2.12046e-30, 1, 3.84592e-16, -1, 0, -4.37114e-08, -0.610875, 4.36209, -5.06112)
+
+[node name="road-slant-flat-high8" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(-6.11959e-08, 3.50333e-16, -1, -3.72529e-09, 1.4, 3.59712e-16, 1.4, 3.72529e-09, -4.37115e-08, -0.611805, 3.67264, -6.26988)
+
+[node name="road-curve4" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-4.37114e-08, 0, 1, 2.12046e-30, 1, 9.61857e-16, -1, 0, -4.37114e-08, -0.111166, 3.68552, -7.95558)
+
+[node name="road-curve3" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_6rtek")]
+transform = Transform3D(1, 0, 0, 8.43769e-17, 1, 1.08706e-23, 6.03961e-14, 0, 1, 3.46904, 2.94981, -7.95464)
+
+[node name="road-slant-flat-high7" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(-4.37114e-08, 0, 1, 2.12046e-30, 1, 4.28997e-16, -1, 0, -4.37114e-08, 3.96717, 2.46638, -3.98139)
+
+[node name="road-slant-flat-high5" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(-4.37114e-08, 0, 1, 2.12046e-30, 1, 7.39832e-16, -1, 0, -4.37114e-08, 3.96766, 1.48166, -2.00521)
+
+[node name="road-slant-flat-high6" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(-4.37114e-08, 0, 1, 2.12046e-30, 1, 6.06617e-16, -1, 0, -4.37114e-08, 3.96768, 1.9722, -2.99008)
+
+[node name="road-curve2" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_6rtek")]
+transform = Transform3D(1.19249e-08, 0, -1, 7.90499e-24, 1, -1.11022e-18, 1, 0, 1.19249e-08, 3.46821, 1.48159, -0.506105)
+
+[node name="road-slant-flat-high4" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(-1.6, -2.06293e-15, -1.50996e-07, -2.26663e-15, 1.5, 2.66806e-23, 2.41593e-07, 9.25999e-23, -1, 1.68755, 2.9322, -8.4541)
+
+[node name="road-slant-flat-high2" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(1, -1.39888e-16, -2.84217e-14, 1.39888e-16, 1, 0, 2.84217e-14, -3.97586e-30, 1, 0.975, 0.487, -0.006)
+
+[node name="road-slant-flat-high3" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("8_83u0k")]
+transform = Transform3D(1, 0, 0, 8.43769e-17, 1, 1.08706e-23, 6.03961e-14, 0, 1, 1.96784, 0.982831, -0.00605965)
+
+[node name="road-straight2" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("7_6qu7l")]
+transform = Transform3D(-1.09279e-07, 0, 1, 3.72529e-09, 1, 1.62567e-16, -2.5, 0, -4.37114e-08, 3.96581, 2.95966, -5.71981)
+
+[node name="road-slant-flat2" parent="CityEnvironment/road-slant-flat-high2/road-slant-flat-high2" instance=ExtResource("10_cbyf8")]
+
+[node name="road-curve2" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+transform = Transform3D(-3.0598e-07, 0, 5, -4.44089e-16, 10, 0, -7, -6.34413e-16, -2.18557e-07, 44.3078, 2.27204, 3.6387)
+
+[node name="tile-high5" parent="CityEnvironment" instance=ExtResource("6_1uwgu")]
+transform = Transform3D(7, 0, 0, 0, 12, 0, 0, 0, 7, 42.2133, -0.654202, 6.92452)
+
+[node name="tile-low3" parent="CityEnvironment" instance=ExtResource("11_e6bp4")]
+transform = Transform3D(4, 4.84288e-08, 0, -4.84288e-08, 4, 0, 0, 0, 4, 48.9385, 26.5373, 23.9608)
+
+[node name="tile-low2" parent="CityEnvironment" instance=ExtResource("11_e6bp4")]
+transform = Transform3D(3.99965, 0.0529868, 0, -0.0529868, 3.99965, 0, 0, 0, 4, 52.7272, 26.515, 23.9443)
+
+[node name="JumpPad" parent="CityEnvironment/tile-low2" instance=ExtResource("5_60mr4")]
+transform = Transform3D(0.749934, -0.00397401, 0, 0.00993502, 0.299974, 0, 0, 0, 0.825, -1.05902, -0.0627227, -0.0481224)
+launch_force = 18.0
 
 [editable path="PlayerBoard"]
 [editable path="PlayerBoard/Basic Hoverboard"]

@@ -17,6 +17,10 @@ signal gravity_flipped(body, gravity_direction)
 ## allowing for different gravity directions for each zone.
 @export var gravity_direction: Vector3 = Vector3.DOWN
 
+func _ready() -> void:
+	# Add this zone to a group for easy finding
+	add_to_group("gravity_zones")
+
 
 ## Called when a body enters the collision shape of this Area3D.
 ## It checks if the entering body is the player and, if so,

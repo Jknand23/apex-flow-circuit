@@ -1,0 +1,547 @@
+[gd_scene load_steps=2 format=3 uid="uid://53351mnn0akw"]
+
+[sub_resource type="GDScript" id="GDScript_2cov3"]
+script/source = "# scripts/city_track_generator.gd
+# Automatic track generator that analyzes city buildings and creates vertical racing paths
+# Attach to a Node3D in your city scene to generate dynamic race tracks
+
+@tool
+extends Node3D
+
+## Track generation parameters
+@export_group(\"Track Generation\")
+## Minimum height difference to create a vertical section
+@export var min_vertical_height: float = 10.0
+## Maximum distance between track sections
+@export var max_section_distance: float = 50.0
+## Number of rails to place per building edge
+@export var rails_per_building: int = 3
+## Height offset for rooftop sections
+@export var rooftop_offset: float = 2.0
+
+@export_group(\"Track Elements\")
+## Prefab scenes for track elements
+@export var rail_scene: PackedScene = preload(\"res://scenes/rail.tscn\")
+@export var hazard_scene: PackedScene = preload(\"res://scenes/hazard.tscn\")
+@export var gravity_zone_scene: PackedScene = preload(\"res://scenes/gravity_flip_zone.tscn\")
+## Path3D node for spiral generation (optional)
+@export var spiral_path_prefab: PackedScene
+
+@export_group(\"Generation Actions\")
+## Trigger track generation
+@export var generate_track: bool = false:
+	set(value):
+		if value and Engine.is_editor_hint():
+			_generate_city_track()
+			generate_track = false
+
+## Clear all generated track elements
+@export var clear_track: bool = false:
+	set(value):
+		if value and Engine.is_editor_hint():
+			_clear_generated_track()
+			clear_track = false
+
+# Track element containers
+var track_container: Node3D
+var buildings_data: Array = []
+var track_sections: Array = []
+
+## Generates track based on city layout analysis
+func _generate_city_track() -> void:
+	print(\"=== Starting city track generation ===\")
+	print(\"Generator position: \", global_position)
+	print(\"Generator parent: \", get_parent().name if get_parent() else \"None\")
+	
+	# Create container for track elements
+	_setup_track_container()
+	
+	# Analyze city layout
+	_analyze_city_buildings()
+	
+	if buildings_data.is_empty():
+		print(\"ERROR: No buildings found! Make sure:\")
+		print(\"1. The track generator is in the same scene as your city\")
+		print(\"2. Your city has nodes with 'Building', 'Buiding', 'pCube', or 'pCylinder' in their names\")
+		print(\"3. The city is properly loaded in the scene\")
+		return
+	
+	print(\"Found %d buildings to work with\" % buildings_data.size())
+	
+	# Generate track sections
+	_create_track_network()
+	
+	# Add track elements
+	_place_rails_on_edges()
+	_create_spiral_ramps()
+	_add_rooftop_sections()
+	_place_gravity_zones()
+	_add_strategic_hazards()
+	
+	print(\"=== Track generation complete! ===\")
+	print(\"Generated %d track sections\" % track_sections.size())
+	print(\"Check the 'GeneratedTrack' node in the scene tree for all elements\")
+
+## Sets up container node for organization
+func _setup_track_container() -> void:
+	# Remove old container if exists
+	if track_container:
+		track_container.queue_free()
+	
+	track_container = Node3D.new()
+	track_container.name = \"GeneratedTrack\"
+	add_child(track_container)
+	track_container.owner = get_tree().edited_scene_root
+
+## Analyzes city buildings to find suitable track locations
+func _analyze_city_buildings() -> void:
+	buildings_data.clear()
+	
+	# Find city environment node
+	var city_node = _find_city_node()
+	if not city_node:
+		print(\"Warning: Could not find city environment node\")
+		return
+	
+	# Scan for building nodes
+	var buildings = _find_all_buildings(city_node)
+	print(\"Found %d buildings to analyze\" % buildings.size())
+	
+	for building in buildings:
+		var data = _analyze_building(building)
+		if data:
+			buildings_data.append(data)
+
+## Finds the city environment node
+func _find_city_node() -> Node:
+	# Look for common city node names
+	var possible_names = [\"CityEnvironment\", \"Low poly City-FBX\", \"City\", \"Buildings\", \"Buidings\"]
+	
+	# First check children
+	for child in get_children():
+		for name in possible_names:
+			if name in child.name:
+				print(\"Found city node as child: \", child.name)
+				return child
+	
+	# Then check siblings
+	if get_parent():
+		for sibling in get_parent().get_children():
+			for name in possible_names:
+				if name in sibling.name:
+					print(\"Found city node as sibling: \", sibling.name)
+					return sibling
+	
+	# Finally check entire scene tree
+	var root = get_tree().edited_scene_root if Engine.is_editor_hint() else get_tree().root
+	return _recursive_find_city(root)
+
+## Recursively searches for city node
+func _recursive_find_city(node: Node) -> Node:
+	if \"City\" in node.name or \"Building\" in node.name:
+		return node
+	
+	for child in node.get_children():
+		var result = _recursive_find_city(child)
+		if result:
+			return result
+	
+	return null
+
+## Finds all building nodes in city
+func _find_all_buildings(city_node: Node) -> Array:
+	var buildings = []
+	_collect_buildings_recursive(city_node, buildings)
+	return buildings
+
+## Recursively collects building nodes
+func _collect_buildings_recursive(node: Node, buildings: Array) -> void:
+	# Only look for main building groups, not individual meshes
+	var building_keywords = [\"Buiding_\", \"Building_\", \"building_\", \"buiding_\"]
+	var is_building_group = false
+	
+	for keyword in building_keywords:
+		if node.name.begins_with(keyword):
+			is_building_group = true
+			break
+	
+	# Also check for specific building names from your city
+	if node.name in [\"Buiding_01\", \"Buiding_02\", \"Buiding_03\", \"Buiding_04\", \"Buiding_05\", \"Buiding_06\"]:
+		is_building_group = true
+	
+	if is_building_group and node is Node3D:
+		# Only add if this building hasn't been added yet
+		var already_added = false
+		for existing in buildings:
+			if existing == node:
+				already_added = true
+				break
+		
+		if not already_added:
+			buildings.append(node)
+			print(\"Found building group: \", node.name)
+	
+	# Continue searching children
+	for child in node.get_children():
+		_collect_buildings_recursive(child, buildings)
+
+## Analyzes individual building for track placement
+func _analyze_building(building: Node3D) -> Dictionary:
+	var data = {}
+	data.node = building
+	data.position = building.global_position
+	
+	# Estimate building dimensions from children or collision shapes
+	var bounds = _estimate_bounds(building)
+	data.size = bounds.size
+	data.center = bounds.center
+	data.top_position = bounds.center + Vector3(0, bounds.size.y / 2, 0)
+	
+	# Determine building type
+	if \"Cylinder\" in building.name:
+		data.type = \"cylinder\"
+		data.radius = max(bounds.size.x, bounds.size.z) / 2
+	else:
+		data.type = \"box\"
+	
+	# Calculate suitable track points
+	data.edge_points = _calculate_edge_points(data)
+	
+	return data
+
+## Estimates building bounds from its children
+func _estimate_bounds(building: Node3D) -> Dictionary:
+	var min_pos = Vector3.INF
+	var max_pos = -Vector3.INF
+	var found_geometry = false
+	
+	# First check if the building itself is a MeshInstance3D
+	if building is MeshInstance3D and building.mesh:
+		var mesh_aabb = building.get_aabb()
+		var global_aabb = building.global_transform * mesh_aabb
+		min_pos = global_aabb.position
+		max_pos = global_aabb.position + global_aabb.size
+		found_geometry = true
+	
+	# Recursively check all descendants for mesh instances or collision shapes
+	var descendants = []
+	_get_all_descendants(building, descendants)
+	
+	for child in descendants:
+		if child is MeshInstance3D and child.mesh:
+			var mesh_aabb = child.get_aabb()
+			var global_aabb = child.global_transform * mesh_aabb
+			min_pos = min_pos.min(global_aabb.position)
+			max_pos = max_pos.max(global_aabb.position + global_aabb.size)
+			found_geometry = true
+		elif child is CollisionShape3D and child.shape:
+			# Use collision shape bounds
+			var shape_aabb = child.shape.get_debug_mesh().get_aabb()
+			var global_aabb = child.global_transform * shape_aabb
+			min_pos = min_pos.min(global_aabb.position)
+			max_pos = max_pos.max(global_aabb.position + global_aabb.size)
+			found_geometry = true
+	
+	# Default bounds if nothing found - make them reasonable
+	if not found_geometry:
+		print(\"Warning: No geometry found for building \", building.name, \" - using defaults\")
+		min_pos = building.global_position - Vector3(10, 0, 10)
+		max_pos = building.global_position + Vector3(10, 30, 10)
+	
+	var size = max_pos - min_pos
+	var center = (min_pos + max_pos) / 2
+	
+	print(\"Building \", building.name, \" bounds: size=\", size, \" center=\", center)
+	
+	return {
+		\"size\": size,
+		\"center\": center
+	}
+
+## Gets all descendants of a node recursively
+func _get_all_descendants(node: Node, descendants: Array) -> void:
+	for child in node.get_children():
+		descendants.append(child)
+		_get_all_descendants(child, descendants)
+
+## Calculates edge points for rail placement
+func _calculate_edge_points(building_data: Dictionary) -> Array:
+	var points = []
+	var center = building_data.center
+	var size = building_data.size
+	
+	# Ensure we have valid size data
+	if size.length() < 1.0:
+		print(\"Warning: Building has invalid size, skipping edge points\")
+		return points
+	
+	if building_data.type == \"cylinder\":
+		# Points around cylinder circumference
+		var radius = building_data.radius
+		if radius > 0:
+			for i in range(8):
+				var angle = (i / 8.0) * TAU
+				var offset = Vector3(sin(angle) * radius, 0, cos(angle) * radius)
+				points.append(center + offset)
+	else:
+		# Corner points for box buildings
+		var half_size = size / 2
+		# Only add points if the building has reasonable dimensions
+		if half_size.x > 1.0 and half_size.z > 1.0:
+			points.append(center + Vector3(half_size.x, 0, half_size.z))
+			points.append(center + Vector3(-half_size.x, 0, half_size.z))
+			points.append(center + Vector3(half_size.x, 0, -half_size.z))
+			points.append(center + Vector3(-half_size.x, 0, -half_size.z))
+	
+	return points
+
+## Creates connected track network between buildings
+func _create_track_network() -> void:
+	if buildings_data.size() < 2:
+		print(\"Not enough buildings for track network\")
+		return
+	
+	track_sections.clear()
+	
+	# Sort buildings by position for logical flow
+	buildings_data.sort_custom(_sort_buildings_by_position)
+	
+	# Connect buildings in sequence
+	for i in range(buildings_data.size()):
+		var current = buildings_data[i]
+		var next = buildings_data[(i + 1) % buildings_data.size()]
+		
+		# Create track section between buildings
+		var section = _create_track_section(current, next)
+		if section:
+			track_sections.append(section)
+
+## Sorts buildings for track flow
+func _sort_buildings_by_position(a: Dictionary, b: Dictionary) -> bool:
+	# Sort by X position first, then Z
+	if abs(a.position.x - b.position.x) > 1.0:
+		return a.position.x < b.position.x
+	return a.position.z < b.position.z
+
+## Creates track section between two buildings
+func _create_track_section(from_building: Dictionary, to_building: Dictionary) -> Dictionary:
+	var section = {}
+	section.start = from_building.top_position
+	section.end = to_building.top_position
+	section.type = \"rooftop_connection\"
+	
+	# Determine if we need vertical elements
+	var height_diff = abs(section.end.y - section.start.y)
+	if height_diff > min_vertical_height:
+		section.needs_vertical = true
+		section.vertical_type = \"wall_ride\" if from_building.type == \"box\" else \"spiral\"
+	
+	return section
+
+## Places rails along building edges
+func _place_rails_on_edges() -> void:
+	if not rail_scene:
+		print(\"Warning: Rail scene not set\")
+		return
+	
+	for building in buildings_data:
+		# Skip buildings that are too small
+		if building.size.y < 10.0:
+			continue
+			
+		var rail_count = 0
+		
+		# Only place rails on some edges, not all
+		var selected_edges = []
+		if building.edge_points.size() > 0:
+			# Pick 2-3 edges for variety
+			selected_edges.append(building.edge_points[0])
+			if building.edge_points.size() > 2:
+				selected_edges.append(building.edge_points[2])
+		
+		# Place rails at different heights
+		for edge_point in selected_edges:
+			for height_offset in [10.0, 20.0]:  # Reduced heights
+				if rail_count >= rails_per_building:
+					break
+				
+				var rail = rail_scene.instantiate()
+				rail.position = edge_point + Vector3(0, height_offset, 0)
+				
+				# Scale rails to be longer
+				rail.scale = Vector3(2, 1, 1)
+				
+				# Rotate rail to follow building edge
+				if building.type == \"cylinder\":
+					rail.look_at(building.center + Vector3(0, height_offset, 0), Vector3.UP)
+				else:
+					# Align with building edge
+					var to_center = (building.center - edge_point).normalized()
+					rail.look_at(edge_point + to_center.cross(Vector3.UP), Vector3.UP)
+				
+				track_container.add_child(rail)
+				rail.owner = get_tree().edited_scene_root
+				rail_count += 1
+
+## Creates spiral ramps around cylindrical buildings
+func _create_spiral_ramps() -> void:
+	for building in buildings_data:
+		if building.type != \"cylinder\":
+			continue
+		
+		# Create spiral path node
+		var spiral_path = Path3D.new()
+		spiral_path.name = \"SpiralRamp_\" + building.node.name
+		spiral_path.position = building.center - building.size.y / 2 * Vector3.UP
+		
+		# Generate spiral curve
+		var curve = Curve3D.new()
+		var num_coils = 2.0
+		var points_per_coil = 32
+		var total_points = int(points_per_coil * num_coils)
+		
+		for i in range(total_points + 1):
+			var fraction = float(i) / total_points
+			var angle = fraction * TAU * num_coils
+			var height = fraction * building.size.y
+			
+			var x = sin(angle) * building.radius * 1.2  # Slightly larger than building
+			var z = cos(angle) * building.radius * 1.2
+			
+			curve.add_point(Vector3(x, height, z))
+		
+		spiral_path.curve = curve
+		track_container.add_child(spiral_path)
+		spiral_path.owner = get_tree().edited_scene_root
+		
+		# Add rails along spiral
+		_place_rails_along_path(spiral_path, 5)
+
+## Places rails along a path
+func _place_rails_along_path(path: Path3D, count: int) -> void:
+	if not rail_scene:
+		return
+	
+	for i in range(count):
+		var offset = float(i) / float(count - 1)
+		var position = path.curve.sample_baked(offset * path.curve.get_baked_length())
+		
+		var rail = rail_scene.instantiate()
+		rail.position = path.global_position + position
+		
+		# Align rail with path direction
+		if i < count - 1:
+			var next_pos = path.curve.sample_baked((offset + 0.1) * path.curve.get_baked_length())
+			rail.look_at(path.global_position + next_pos, Vector3.UP)
+		
+		track_container.add_child(rail)
+		rail.owner = get_tree().edited_scene_root
+
+## Adds rooftop racing sections
+func _add_rooftop_sections() -> void:
+	for i in range(track_sections.size()):
+		var section = track_sections[i]
+		
+		# Only create ramps for sections that need them
+		var distance = section.start.distance_to(section.end)
+		if distance < 10.0 or distance > max_section_distance:
+			continue
+		
+		# Skip if buildings are at similar heights
+		var height_diff = abs(section.start.y - section.end.y)
+		if height_diff < 5.0:
+			continue
+		
+		# Create connecting ramps between rooftops
+		var ramp = _create_ramp(section.start, section.end)
+		if ramp:
+			track_container.add_child(ramp)
+			ramp.owner = get_tree().edited_scene_root
+
+## Creates ramp mesh between two points
+func _create_ramp(start: Vector3, end: Vector3) -> MeshInstance3D:
+	var ramp = MeshInstance3D.new()
+	ramp.name = \"Ramp\"
+	
+	# Create simple ramp geometry
+	var mesh = PlaneMesh.new()
+	var distance = start.distance_to(end)
+	mesh.size = Vector2(10, distance)
+	
+	ramp.mesh = mesh
+	
+	# Position and rotate ramp
+	ramp.position = (start + end) / 2
+	ramp.look_at(end, Vector3.UP)
+	ramp.rotate_object_local(Vector3.RIGHT, -PI/2)
+	
+	# Add collision
+	var static_body = StaticBody3D.new()
+	var collision = CollisionShape3D.new()
+	var shape = BoxShape3D.new()
+	shape.size = Vector3(10, 0.5, distance)
+	collision.shape = shape
+	
+	ramp.add_child(static_body)
+	static_body.add_child(collision)
+	
+	return ramp
+
+## Places gravity flip zones on building walls
+func _place_gravity_zones() -> void:
+	if not gravity_zone_scene:
+		print(\"Warning: Gravity zone scene not set\")
+		return
+	
+	for building in buildings_data:
+		if building.type != \"box\" or building.size.y < min_vertical_height:
+			continue
+		
+		# Place gravity zones on tall building walls
+		var zone = gravity_zone_scene.instantiate()
+		zone.position = building.center
+		
+		# Make zone cover building wall
+		if zone.has_node(\"CollisionShape3D\"):
+			var collision = zone.get_node(\"CollisionShape3D\")
+			if collision.shape is BoxShape3D:
+				collision.shape.size = Vector3(building.size.x + 2, building.size.y, 2)
+		
+		# Set gravity direction to point toward wall
+		zone.gravity_direction = Vector3.RIGHT
+		
+		track_container.add_child(zone)
+		zone.owner = get_tree().edited_scene_root
+
+## Adds strategic hazards throughout track
+func _add_strategic_hazards() -> void:
+	if not hazard_scene:
+		print(\"Warning: Hazard scene not set\")
+		return
+	
+	# Place hazards at challenging points
+	for section in track_sections:
+		if section.get(\"needs_vertical\", false):
+			# Add hazards near vertical transitions
+			var hazard = hazard_scene.instantiate()
+			hazard.position = section.start + Vector3(randf_range(-5, 5), 2, randf_range(-5, 5))
+			track_container.add_child(hazard)
+			hazard.owner = get_tree().edited_scene_root
+
+## Clears all generated track elements
+func _clear_generated_track() -> void:
+	if track_container:
+		track_container.queue_free()
+		track_container = null
+	
+	buildings_data.clear()
+	track_sections.clear()
+	
+	print(\"Cleared all generated track elements\") "
+
+[node name="TrackGenerator" type="Node3D"]
+script = SubResource("GDScript_2cov3")
+min_vertical_height = 15.0
+max_section_distance = 60.0
+rails_per_building = 4
+rooftop_offset = 3.0

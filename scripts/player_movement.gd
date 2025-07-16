@@ -13,12 +13,16 @@ const AIR_DODGE_MULTIPLIER: float = 0.8  # Multiplier for dodge strength in air 
 const DODGE_COOLDOWN: float = 0.5   # Seconds between dodges (prevent spam).
 const JUMP_VELOCITY: float = 5.0
 const GRAVITY: float = -9.8
+const GRAVITY_TRANSITION_SPEED: float = 2.0  # How fast gravity transitions (higher = faster)
+const AIR_RESISTANCE: float = 4.5  # How much horizontal speed reduces in air per second
 
 # Descriptive state vars.
 var current_speed: float = 0.0
 var is_jumping: bool = false
 var is_grinding: bool = false  # Tracks if currently grinding on a rail.
 var dodge_cooldowns := { "left": 0.0, "right": 0.0 }  # Timers for each dodge direction.
+var current_gravity_direction: Vector3 = Vector3.DOWN  # Current gravity direction
+var target_gravity_direction: Vector3 = Vector3.DOWN  # Target gravity direction for smooth transitions
 
 # Map for input actions (expandable, no enums).
 var input_actions := {
@@ -35,12 +39,19 @@ var input_actions := {
 var trail: MeshInstance3D  # Will be set in _ready() with error checking
 
 func _ready() -> void:
+	# Add player to group for detection by interactive elements
+	add_to_group("player")
+	print("Player added to group 'player'. Player groups: ", get_groups())
+	
 	# Search recursively for the Trail node
 	trail = find_trail_recursive(self)
 	if trail:
 		print("Found trail at path: ", get_path_to(trail))
 	else:
 		print("Trail not found anywhere in the scene tree")
+	
+	# Connect to gravity zones in the scene
+	_connect_gravity_zones()
 
 # Recursive function to find Trail node anywhere in the tree
 func find_trail_recursive(node: Node) -> MeshInstance3D:
@@ -74,10 +85,15 @@ func apply_acceleration(delta: float) -> void:
 		return
 	
 	# Base acceleration (from Day 1) – build speed independently of Cadence.
-	if Input.is_action_pressed(input_actions["forward"]):
-		current_speed = min(current_speed + ACCELERATION * delta, MAX_SPEED)
+	# Only allow acceleration/deceleration when on ground
+	if is_on_floor():
+		if Input.is_action_pressed(input_actions["forward"]):
+			current_speed = min(current_speed + ACCELERATION * delta, MAX_SPEED)
+		else:
+			current_speed = max(current_speed - ACCELERATION * delta, 0.0)  # Decelerate.
 	else:
-		current_speed = max(current_speed - ACCELERATION * delta, 0.0)  # Decelerate.
+		# In air: apply gentle air resistance only
+		current_speed = max(current_speed - AIR_RESISTANCE * delta, 0.0)  # Natural air resistance
 	
 	# Apply Cadence as an additive boost (up to +MAX_SPEED at 100%).
 	var cadence_boost: float = (cadence_bar.current_cadence / 100.0) * MAX_SPEED  # 0 to MAX_SPEED extra.
@@ -114,7 +130,21 @@ func apply_gravity_and_jump(delta: float) -> void:
 		return
 	
 	if not is_on_floor():
-		velocity.y += GRAVITY * delta
+		# Smooth gravity transition
+		if current_gravity_direction != target_gravity_direction:
+			current_gravity_direction = current_gravity_direction.lerp(target_gravity_direction, GRAVITY_TRANSITION_SPEED * delta)
+			current_gravity_direction = current_gravity_direction.normalized()
+			
+			# Update character rotation to match gravity
+			var new_up = -current_gravity_direction
+			var forward = global_transform.basis.z
+			var right = forward.cross(new_up).normalized()
+			forward = new_up.cross(right).normalized()
+			
+			global_transform.basis = Basis(right, new_up, forward).orthonormalized()
+		
+		# Apply gravity in current direction
+		velocity += current_gravity_direction * abs(GRAVITY) * delta
 	else:
 		is_jumping = false  # Reset on land.
 	
@@ -124,6 +154,7 @@ func apply_gravity_and_jump(delta: float) -> void:
 		if is_on_floor() or is_grinding:  # Allow jump from ground or grind.
 			velocity.y = JUMP_VELOCITY
 			is_jumping = true
+			print("REGULAR JUMP: Applied velocity.y = ", JUMP_VELOCITY)
 
 # Function to check for grind/hazard collisions after move_and_slide().
 # Handles detection and state changes.
@@ -173,6 +204,26 @@ func update_trail() -> void:
 		# Change color intensity for glow effect
 		var glow_intensity = lerp(1.0, 3.0, norm_cadence)
 		trail.material_override.emission = Color(0, 1, 1) * glow_intensity
+
+## Connects to all gravity flip zones in the scene
+func _connect_gravity_zones() -> void:
+	# Wait for scene to be ready
+	await get_tree().process_frame
+	
+	# Find all gravity zones in the scene
+	var zones = get_tree().get_nodes_in_group("gravity_zones")
+	for zone in zones:
+		if zone.has_signal("gravity_flipped"):
+			zone.gravity_flipped.connect(_on_gravity_flipped)
+			print("Connected to gravity zone: ", zone.name)
+
+## Handles gravity direction changes from zones
+## @param body The body entering the zone (should be this player)
+## @param gravity_direction The new gravity direction vector
+func _on_gravity_flipped(body: Node3D, gravity_direction: Vector3) -> void:
+	if body == self:
+		target_gravity_direction = gravity_direction.normalized()
+		print("Gravity flipping to: ", target_gravity_direction)
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor() and velocity.y == 0 and not is_jumping:  # Rare edge case check (ignore during jumps).

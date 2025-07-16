@@ -1,0 +1,90 @@
+[gd_scene load_steps=9 format=3 uid="uid://b4m7n9k2l5p8q"]
+
+[ext_resource type="PackedScene" uid="uid://dgm8vx4k2a5t2" path="res://scenes/prefabs/roads/road_straight_ready.tscn" id="1_straight"]
+[ext_resource type="PackedScene" uid="uid://c7m3k5n2p8q4r" path="res://scenes/prefabs/roads/road_slant_ready.tscn" id="2_slant"]
+[ext_resource type="PackedScene" uid="uid://bt9k4x2m8p5n7" path="res://scenes/prefabs/roads/road_slant_high_ready.tscn" id="3_slant_high"]
+[ext_resource type="PackedScene" uid="uid://d8l6k9m1n4p2s" path="res://scenes/prefabs/roads/road_slant_flat_ready.tscn" id="4_slant_flat"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ramp"]
+sky_top_color = Color(0.2, 0.6, 1, 1)
+sky_horizon_color = Color(0.6, 0.2, 1, 1)
+
+[sub_resource type="Sky" id="Sky_ramp"]
+sky_material = SubResource("ProceduralSkyMaterial_ramp")
+
+[sub_resource type="Environment" id="Environment_ramp"]
+background_mode = 2
+sky = SubResource("Sky_ramp")
+ambient_light_source = 3
+ambient_light_energy = 0.3
+
+[sub_resource type="BoxMesh" id="BoxMesh_platform"]
+size = Vector3(4, 0.5, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_platform"]
+albedo_color = Color(0.5, 0.3, 0.1, 1)
+
+[node name="TestRampBuilding" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 8, 8, 8)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 5, 0)
+light_energy = 0.8
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_ramp")
+
+[node name="RampDemo" type="Node3D" parent="."]
+
+[node name="GroundLevel" type="Node3D" parent="RampDemo"]
+
+[node name="StartRoad" parent="RampDemo/GroundLevel" instance=ExtResource("1_straight")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+
+[node name="TransitionUp1" parent="RampDemo/GroundLevel" instance=ExtResource("2_slant")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="HighSlant" parent="RampDemo/GroundLevel" instance=ExtResource("3_slant_high")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+
+[node name="ElevatedLevel" type="Node3D" parent="RampDemo"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+
+[node name="ElevatedRoad1" parent="RampDemo/ElevatedLevel" instance=ExtResource("1_straight")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+
+[node name="ElevatedRoad2" parent="RampDemo/ElevatedLevel" instance=ExtResource("1_straight")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 30)
+
+[node name="TransitionDown" parent="RampDemo/ElevatedLevel" instance=ExtResource("4_slant_flat")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 40)
+
+[node name="Platform" type="MeshInstance3D" parent="RampDemo"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75, 25)
+mesh = SubResource("BoxMesh_platform")
+surface_material_override/0 = SubResource("StandardMaterial3D_platform")
+
+[node name="Instructions" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2, -15)
+text = "RAMP BUILDING DEMO
+
+🏁 Available Slant Pieces:
+• road_slant_ready.tscn (gentle slope)  
+• road_slant_high_ready.tscn (steep ramp)
+• road_slant_flat_ready.tscn (transition)
+
+🔧 How to Build Ramps:
+1. Start with flat roads
+2. Add slant piece for upward transition  
+3. Use slant-high for steep sections
+4. Add elevated straight roads
+5. Use slant-flat (rotated) for downward
+
+🎮 Pro Tips:
+• Rotate pieces 180° for downward ramps
+• Stack slants for extreme elevation
+• Use platforms for support structures"
+modulate = Color(0, 1, 0, 1)
+font_size = 48 
