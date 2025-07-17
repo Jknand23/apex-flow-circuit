@@ -15,7 +15,7 @@ signal gravity_flipped(body, gravity_direction)
 ## The direction gravity will point to within this zone.
 ## This vector is exported so it can be set in the Godot editor,
 ## allowing for different gravity directions for each zone.
-@export var gravity_direction: Vector3 = Vector3.DOWN
+@export var zone_gravity_direction: Vector3 = Vector3.DOWN
 
 func _ready() -> void:
 	# Add this zone to a group for easy finding
@@ -28,7 +28,7 @@ func _ready() -> void:
 ## @param body The body that entered the area.
 func _on_body_entered(body):
 	if body.is_in_group("player"):
-		gravity_flipped.emit(body, gravity_direction)
+		gravity_flipped.emit(body, zone_gravity_direction)
 
 
 ## Called when a body exits the collision shape of this Area3D.

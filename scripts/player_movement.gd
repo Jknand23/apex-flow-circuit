@@ -13,7 +13,10 @@ const AIR_DODGE_MULTIPLIER: float = 0.8  # Multiplier for dodge strength in air 
 const DODGE_COOLDOWN: float = 0.5   # Seconds between dodges (prevent spam).
 const JUMP_VELOCITY: float = 5.0
 const GRAVITY: float = -9.8
-const GRAVITY_TRANSITION_SPEED: float = 2.0  # How fast gravity transitions (higher = faster)
+const WALL_GRAVITY_MULTIPLIER: float = 4.0  # Make wall gravity stronger but not overwhelming
+const GRAVITY_TRANSITION_SPEED: float = 10.0  # Increased for faster transitions, especially for walls
+const ROTATION_TRANSITION_SPEED: float = 12.0  # Increased further for quicker rotation to full alignment
+@export var enable_wall_rotation: bool = true  # Toggle player rotation during wall riding
 const AIR_RESISTANCE: float = 4.5  # How much horizontal speed reduces in air per second
 
 # Descriptive state vars.
@@ -100,15 +103,30 @@ func apply_acceleration(delta: float) -> void:
 	var boosted_speed: float = current_speed + cadence_boost
 	
 	var forward_direction := -global_transform.basis.z.normalized()  # Board forward.
-	velocity.x = forward_direction.x * boosted_speed
-	velocity.z = forward_direction.z * boosted_speed
+	
+	# When wall riding, project movement along the wall surface
+	var is_wall_riding = abs(current_gravity_direction.x) > 0.1 or abs(current_gravity_direction.z) > 0.1
+	if is_wall_riding and is_on_floor():
+		# Get the wall normal (opposite of gravity direction for walls)
+		var wall_normal = -current_gravity_direction.normalized()
+		# Project forward direction onto the wall plane
+		forward_direction = forward_direction - wall_normal * forward_direction.dot(wall_normal)
+		forward_direction = forward_direction.normalized()
+		
+		# Apply movement along the wall
+		velocity = forward_direction * boosted_speed
+	else:
+		# Normal movement
+		velocity.x = forward_direction.x * boosted_speed
+		velocity.z = forward_direction.z * boosted_speed
 
 # Function to apply turning (rotation).
 # @param delta: float - Time since last physics frame.
 # @param turn_input: float - Direction from get_turn_input().
 func apply_turning(delta: float, turn_input: float) -> void:
 	if abs(turn_input) > 0:
-		rotate_y(turn_input * TURN_SPEED * delta * -1)  # Invert for natural left/right.
+		var turn_angle = turn_input * TURN_SPEED * delta * -1
+		rotate(up_direction.normalized(), turn_angle)
 
 # Function to apply dodge impulse.
 # @param direction: float - -1 for left, 1 for right.
@@ -134,17 +152,26 @@ func apply_gravity_and_jump(delta: float) -> void:
 		if current_gravity_direction != target_gravity_direction:
 			current_gravity_direction = current_gravity_direction.lerp(target_gravity_direction, GRAVITY_TRANSITION_SPEED * delta)
 			current_gravity_direction = current_gravity_direction.normalized()
+			print("Gravity transition: ", current_gravity_direction)
 			
-			# Update character rotation to match gravity
-			var new_up = -current_gravity_direction
-			var forward = global_transform.basis.z
-			var right = forward.cross(new_up).normalized()
-			forward = new_up.cross(right).normalized()
-			
-			global_transform.basis = Basis(right, new_up, forward).orthonormalized()
+			# Rotate player to align with surface
+			if enable_wall_rotation:
+				_align_player_to_surface(delta)
 		
-		# Apply gravity in current direction
-		velocity += current_gravity_direction * abs(GRAVITY) * delta
+		# Apply gravity in current direction (stronger for wall riding)
+		var gravity_strength = abs(GRAVITY)
+		# Apply strong wall gravity if there's any horizontal component
+		if abs(current_gravity_direction.x) > 0.01 or abs(current_gravity_direction.z) > 0.01:
+			gravity_strength *= WALL_GRAVITY_MULTIPLIER  # 4x stronger for wall riding
+			print("Wall riding gravity applied: ", current_gravity_direction, " strength: ", gravity_strength)
+		
+		# Apply gravity
+		velocity += current_gravity_direction * gravity_strength * delta
+		
+		# Limit maximum speed along gravity direction
+		var velocity_along_gravity = velocity.dot(current_gravity_direction.normalized())
+		if velocity_along_gravity > 15.0:  # Note: positive since direction is down
+			velocity -= current_gravity_direction.normalized() * (velocity_along_gravity - 15.0)
 	else:
 		is_jumping = false  # Reset on land.
 	
@@ -152,9 +179,9 @@ func apply_gravity_and_jump(delta: float) -> void:
 		if is_grinding:
 			is_grinding = false  # Exit grind on jump.
 		if is_on_floor() or is_grinding:  # Allow jump from ground or grind.
-			velocity.y = JUMP_VELOCITY
+			velocity += up_direction * JUMP_VELOCITY
 			is_jumping = true
-			print("REGULAR JUMP: Applied velocity.y = ", JUMP_VELOCITY)
+			print("GENERAL JUMP: Applied along ", up_direction, " velocity: ", JUMP_VELOCITY)
 
 # Function to check for grind/hazard collisions after move_and_slide().
 # Handles detection and state changes.
@@ -205,29 +232,110 @@ func update_trail() -> void:
 		var glow_intensity = lerp(1.0, 3.0, norm_cadence)
 		trail.material_override.emission = Color(0, 1, 1) * glow_intensity
 
-## Connects to all gravity flip zones in the scene
+## Connects to all gravity flip zones and wall riding zones in the scene
 func _connect_gravity_zones() -> void:
 	# Wait for scene to be ready
 	await get_tree().process_frame
 	
 	# Find all gravity zones in the scene
 	var zones = get_tree().get_nodes_in_group("gravity_zones")
+	print("Found ", zones.size(), " gravity zones in scene")
+	
 	for zone in zones:
+		print("Checking zone: ", zone.name, " - signals: ", zone.get_signal_list())
 		if zone.has_signal("gravity_flipped"):
 			zone.gravity_flipped.connect(_on_gravity_flipped)
 			print("Connected to gravity zone: ", zone.name)
+		elif zone.has_signal("wall_riding_changed"):
+			zone.wall_riding_changed.connect(_on_gravity_flipped)
+			print("Connected to wall riding zone: ", zone.name)
+		else:
+			print("Zone ", zone.name, " has no recognized gravity signals")
 
 ## Handles gravity direction changes from zones
 ## @param body The body entering the zone (should be this player)
 ## @param gravity_direction The new gravity direction vector
 func _on_gravity_flipped(body: Node3D, gravity_direction: Vector3) -> void:
+	print("Gravity signal received - Body: ", body.name, " Target gravity: ", gravity_direction)
 	if body == self:
 		target_gravity_direction = gravity_direction.normalized()
-		print("Gravity flipping to: ", target_gravity_direction)
+		# For wall riding (horizontal gravity), make transition instant and add initial pull
+		if abs(target_gravity_direction.y) < 0.1:
+			current_gravity_direction = target_gravity_direction
+			var initial_pull = 5.0  # Initial velocity towards wall
+			velocity += target_gravity_direction * initial_pull
+			print("Wall riding started - instant gravity: ", current_gravity_direction, " initial pull: ", initial_pull)
+		print("✓ GRAVITY CHANGING to: ", target_gravity_direction)
+	else:
+		print("✗ Body is not player, ignoring signal")
+
+## Smoothly aligns the player to the surface they're riding on
+## @param delta Time delta for smooth interpolation
+func _align_player_to_surface(delta: float) -> void:
+	# Calculate new up direction based on gravity (opposite of gravity is up)
+	var new_up = -current_gravity_direction.normalized()
+	
+	# Get current transform components
+	var current_transform = global_transform
+	var current_up = current_transform.basis.y.normalized()
+	var current_forward = -current_transform.basis.z.normalized()
+	
+	# If already aligned, skip
+	if new_up.is_equal_approx(current_up):
+		return
+	
+	# Calculate the rotation axis (perpendicular to both current and target up)
+	var rotation_axis = current_up.cross(new_up).normalized()
+	
+	# If vectors are opposite, we need a different approach
+	if rotation_axis.length() < 0.01:
+		# Use current forward as rotation axis for 180 degree flip
+		rotation_axis = current_forward
+	
+	# Calculate rotation angle
+	var angle = current_up.angle_to(new_up)
+	
+	# Create target transform
+	var target_basis = current_transform.basis.rotated(rotation_axis, angle)
+	
+	# Smooth interpolation
+	var lerp_factor = min(ROTATION_TRANSITION_SPEED * delta, 1.0)
+	var current_quat = current_transform.basis.get_rotation_quaternion()
+	var target_quat = target_basis.get_rotation_quaternion()
+	var interpolated_quat = current_quat.slerp(target_quat, lerp_factor)
+	
+	# Apply the interpolated rotation while preserving scale
+	var scale = current_transform.basis.get_scale()
+	global_transform.basis = Basis(interpolated_quat).scaled(scale)
+	
+	print("Aligning player - Current up: ", current_up, " Target up: ", new_up, " Angle: ", rad_to_deg(angle), " degrees")
+
+## Handles wall riding collision behavior to prevent bouncing
+func _handle_wall_collisions() -> void:
+	# Check if we're hitting walls while wall riding
+	for i in get_slide_collision_count():
+		var collision = get_slide_collision(i)
+		var collider = collision.get_collider()
+		var normal = collision.get_normal()
+		
+		# If we hit a wall in the direction we're being pulled
+		var wall_direction = current_gravity_direction.normalized()
+		var collision_alignment = normal.dot(-wall_direction)
+		
+		if collision_alignment > 0.7:  # Wall is aligned with our gravity direction
+			# Dampen bouncing by reducing velocity away from wall
+			var velocity_away_from_wall = velocity.dot(normal)
+			if velocity_away_from_wall > 0:  # Moving away from wall
+				velocity -= normal * velocity_away_from_wall * 0.8  # Reduce bounce
+				print("Wall contact - dampening bounce, wall normal: ", normal)
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor() and velocity.y == 0 and not is_jumping:  # Rare edge case check (ignore during jumps).
 		push_error("Physics error: Not on floor with zero Y velocity.")
+	
+	# Debug player position every few frames
+	if Engine.get_process_frames() % 60 == 0:  # Every 60 frames (1 second at 60fps)
+		print("Player position: ", global_position, " Current gravity: ", current_gravity_direction)
 	
 	# Decrement dodge cooldowns every frame.
 	for key in dodge_cooldowns:
@@ -247,9 +355,20 @@ func _physics_process(delta: float) -> void:
 	
 	apply_gravity_and_jump(delta)
 	
+	# Set up_direction based on current gravity for proper floor/wall detection
+	up_direction = -current_gravity_direction.normalized()
+	
 	move_and_slide()  # Apply velocity with collisions.
+	
+	# Special handling for wall riding collisions
+	if abs(current_gravity_direction.x) > 0.01 or abs(current_gravity_direction.z) > 0.01:
+		_handle_wall_collisions()
 	
 	handle_collisions(get_slide_collision_count())  # Check for grinds/bails post-slide.
 
 func _process(_delta: float) -> void:
 	update_trail()
+
+## Returns the current gravity direction for debugging
+func get_gravity_direction() -> Vector3:
+	return current_gravity_direction

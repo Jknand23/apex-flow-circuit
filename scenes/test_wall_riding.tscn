@@ -1,0 +1,42 @@
+[gd_scene load_steps=6 format=3 uid="uid://b8x2v4n9qw1r5"]
+
+[ext_resource type="PackedScene" uid="uid://cw7h4v2j9nq8x" path="res://scenes/wall_riding_zone.tscn" id="1_wall_zone"]
+[ext_resource type="PackedScene" path="res://scenes/player_board.tscn" id="2_player"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(1, 20, 20)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.8, 0.4, 0.4, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_collision"]
+size = Vector3(1, 20, 20)
+
+[node name="TestWallRiding" type="Node3D"]
+
+[node name="Wall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 10, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wall"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = SubResource("StandardMaterial3D_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Wall"]
+shape = SubResource("BoxShape3D_wall_collision")
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(50, 0, 0, 0, 1, 0, 0, 0, 50, 0, -1, 0)
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(50, 0, 0, 0, 1, 0, 0, 0, 50, 0, -1, 0)
+shape = SubResource("BoxShape3D_wall_collision")
+
+[node name="WallRidingZone" parent="." instance=ExtResource("1_wall_zone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 10, 0)
+wall_surface_gravity = Vector3(-1, 0, 0)
+
+[node name="PlayerBoard" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0) 

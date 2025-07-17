@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://doui6nhxgvl74"]
+[gd_scene load_steps=23 format=3 uid="uid://doui6nhxgvl74"]
 
 [ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
 [ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://sturkt7avf8s" path="res://scenes/jump_pad.tscn" id="5_60mr4"]
 [ext_resource type="PackedScene" uid="uid://yjrgbelhsc4k" path="res://assets/models/environments/roads/road-slant-high.glb" id="5_uvywg"]
 [ext_resource type="PackedScene" uid="uid://cps87ednh8jss" path="res://assets/models/environments/roads/tile-high.glb" id="6_1uwgu"]
+[ext_resource type="PackedScene" path="res://scenes/wall_riding_zone.tscn" id="6_wall_zone"]
 [ext_resource type="PackedScene" uid="uid://dt6rh24xje6hg" path="res://scenes/city_environment.tscn" id="6_yec2s"]
 [ext_resource type="PackedScene" uid="uid://b8o1xpmnshmi4" path="res://assets/models/environments/roads/road-straight.glb" id="7_6qu7l"]
 [ext_resource type="PackedScene" uid="uid://cnd4m3fo672kw" path="res://assets/models/environments/roads/road-curve.glb" id="8_6rtek"]
@@ -43,6 +44,9 @@ ambient_light_energy = 0.5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3fo6q"]
 bg_color = Color(0, 0.629829, 0.979454, 1)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1c2mn"]
+friction = 2.0
 
 [node name="BasicTrackRoot" type="Node3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.127975, -1.90735e-06, 0.0527763)
@@ -95,26 +99,39 @@ script = ExtResource("3_nvx5r")
 [node name="CityEnvironment" parent="." instance=ExtResource("6_yec2s")]
 transform = Transform3D(0.999912, -0.0132467, 0, 0.0132467, 0.999912, 0, 0, 0, 1, -5.02562, 0.160931, 1.5061)
 
-[node name="road-straight6" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
-transform = Transform3D(17, 1.49012e-07, 0, -2.08616e-07, 12, 0, 0, 0, 12, 21.5664, 35.4785, -104.472)
+[node name="WallRidingZone" parent="CityEnvironment" instance=ExtResource("6_wall_zone")]
+transform = Transform3D(5, 3.72529e-08, 0, -3.72529e-08, 5, 0, 0, 0, 5, 23.1032, 2.17576, -102.088)
+wall_surface_gravity = Vector3(1, 0, 0)
+
+[node name="WallSurface" type="StaticBody3D" parent="CityEnvironment"]
+transform = Transform3D(-4.37114e-08, 1, -4.65661e-08, 1.11022e-16, -4.65661e-08, -1, -1, -4.37114e-08, 1.91069e-15, 27, 5, -102)
+physics_material_override = SubResource("PhysicsMaterial_1c2mn")
+
+[node name="WallMesh" type="MeshInstance3D" parent="CityEnvironment/WallSurface"]
+transform = Transform3D(1, 0, 0, 0, 50, 0, 0, 0, 20, 0, 0, 0)
+mesh = SubResource("PlaneMesh_efcfb")
+
+[node name="WallCollision" type="CollisionShape3D" parent="CityEnvironment/WallSurface"]
+transform = Transform3D(1, 0, 0, 0, 50, 0, 0, 0, 20, 0, 0, 0)
+shape = SubResource("BoxShape3D_track_collision")
 
 [node name="road-slant-high3" parent="CityEnvironment" instance=ExtResource("5_uvywg")]
-transform = Transform3D(1, 3.35276e-08, 0, -1.67638e-08, 2, 0, 0, 0, 12, 29.3365, 35.7223, -104.486)
+transform = Transform3D(2, 6.14673e-08, 0, -6.14673e-08, 2, 0, 0, 0, 12, 13.9939, 35.5571, -104.534)
 
 [node name="road-curve10" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
-transform = Transform3D(-12, 0, -1.04907e-06, 0, 12, 0, 1.04907e-06, 0, -12, 1.11051, 35.5023, -110.47)
+transform = Transform3D(-12, 0, -1.04907e-06, 0, 12, 0, 1.04907e-06, 0, -12, 1.11032, 35.4877, -110.47)
 
 [node name="road-curve9" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
-transform = Transform3D(12, 1.49012e-07, 0, -1.49012e-07, 12, 0, 0, 0, 12, -10.8859, 35.5199, -134.293)
+transform = Transform3D(12, 1.49012e-07, 0, -1.49012e-07, 12, 0, 0, 0, 12, -10.8862, 35.4938, -134.293)
 
 [node name="road-straight5" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
-transform = Transform3D(11.9927, 0, 0.418794, 0, 12, 0, -0.418794, 0, 11.9927, -28.6244, 35.5254, -140.109)
+transform = Transform3D(11.9927, 0, 0.418794, -2.98023e-08, 12, 0, -0.418794, 0, 11.9927, -28.6245, 35.5158, -140.109)
 
 [node name="road-curve8" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
 transform = Transform3D(-5.24537e-07, 1.49012e-08, 12, 2.66454e-15, 12, -1.49012e-08, -12, 1.88291e-15, -5.24537e-07, -46.4472, 35.5231, -133.913)
 
 [node name="road-straight3" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
-transform = Transform3D(24.8137, -1.49012e-08, -1.46243, 2.98023e-08, 12, 3.72529e-09, 3.04673, -2.86922e-09, 11.9106, -22.9605, 35.6033, -90.6068)
+transform = Transform3D(24.8137, -1.49012e-08, -1.46243, 5.96046e-08, 12, 3.72529e-09, 3.04673, -2.86922e-09, 11.9106, -22.9605, 35.6033, -90.6068)
 
 [node name="road-straight4" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
 transform = Transform3D(-5.24537e-07, 0, 12, 0, 12, 0, -12, 0, -5.24537e-07, -52.4683, 35.5542, -116.021)
