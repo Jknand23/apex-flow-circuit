@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://bj1rv6o7x5cuy"]
+
+[ext_resource type="Script" path="res://scripts/enhanced_gravity_zone.gd" id="1_7v5df"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(10, 5, 10)
+
+[node name="EnhancedGravityZone" type="Area3D"]
+script = ExtResource("1_7v5df")
+gravity_strength_multiplier = 2.0
+downhill_only = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_1")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+text = "Enhanced Gravity Zone
+Multiplier: 2.0x"
+font_size = 16 

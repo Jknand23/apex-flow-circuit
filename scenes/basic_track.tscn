@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://doui6nhxgvl74"]
+[gd_scene load_steps=27 format=3 uid="uid://doui6nhxgvl74"]
 
 [ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
 [ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://sturkt7avf8s" path="res://scenes/jump_pad.tscn" id="5_60mr4"]
 [ext_resource type="PackedScene" uid="uid://yjrgbelhsc4k" path="res://assets/models/environments/roads/road-slant-high.glb" id="5_uvywg"]
 [ext_resource type="PackedScene" uid="uid://cps87ednh8jss" path="res://assets/models/environments/roads/tile-high.glb" id="6_1uwgu"]
-[ext_resource type="PackedScene" path="res://scenes/wall_riding_zone.tscn" id="6_wall_zone"]
+[ext_resource type="PackedScene" uid="uid://cw7h4v2kanq8x" path="res://scenes/wall_riding_zone.tscn" id="6_wall_zone"]
 [ext_resource type="PackedScene" uid="uid://dt6rh24xje6hg" path="res://scenes/city_environment.tscn" id="6_yec2s"]
 [ext_resource type="PackedScene" uid="uid://b8o1xpmnshmi4" path="res://assets/models/environments/roads/road-straight.glb" id="7_6qu7l"]
 [ext_resource type="PackedScene" uid="uid://cnd4m3fo672kw" path="res://assets/models/environments/roads/road-curve.glb" id="8_6rtek"]
@@ -14,6 +14,9 @@
 [ext_resource type="PackedScene" uid="uid://bg3mpc0cebbnm" path="res://assets/models/environments/roads/road-slant-flat.glb" id="10_cbyf8"]
 [ext_resource type="PackedScene" uid="uid://dcj5t6laea8c3" path="res://assets/models/environments/roads/tile-low.glb" id="11_e6bp4"]
 [ext_resource type="PackedScene" uid="uid://c7p062hnd0oxv" path="res://assets/models/environments/roads/tile-slant.glb" id="13_385o8"]
+[ext_resource type="PackedScene" uid="uid://dm25dk4cy6v53" path="res://assets/models/environments/underwater_acrylic_tunnel_portal.glb" id="15_mqoja"]
+[ext_resource type="PackedScene" uid="uid://bjit8sylaj5ar" path="res://scenes/grindable_rail.tscn" id="16_4c8v6"]
+[ext_resource type="PackedScene" path="res://scenes/enhanced_gravity_zone.tscn" id="16_vn1nw"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_efcfb"]
 size = Vector2(50, 50)
@@ -48,6 +51,8 @@ bg_color = Color(0, 0.629829, 0.979454, 1)
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1c2mn"]
 friction = 2.0
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_v87dk"]
+
 [node name="BasicTrackRoot" type="Node3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.127975, -1.90735e-06, 0.0527763)
 
@@ -66,17 +71,80 @@ shape = SubResource("BoxShape3D_track_collision")
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0.0485344, 118.397, -0.0273361)
 light_color = Color(0.956863, 0.913725, 0.54902, 1)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_s0b1v")
-
 [node name="PlayerBoard" parent="." instance=ExtResource("2_4e1l4")]
 transform = Transform3D(-4.37114e-09, 0, 0.1, 0, 0.1, 0, -0.1, 0, -4.37114e-09, 113, 0.25, 1.5)
 floor_stop_on_slope = false
+
+[node name="Basic Hoverboard" parent="PlayerBoard" index="0"]
+transform = Transform3D(20, 0, 0, 0, 20, 0, 0, 0, 20, 0, 0, 0)
+
+[node name="Skeleton3D" parent="PlayerBoard/Basic Hoverboard" index="0"]
+bones/0/rotation = Quaternion(-0.707107, 0, 0, 0.707107)
+bones/1/rotation = Quaternion(0.707107, 0, 0, 0.707107)
+bones/1/scale = Vector3(0.01, 0.01, 0.01)
+
+[node name="polySurface2_phong3_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="0"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_phong3_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_phong3_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_phong1_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="1"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_phong1_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_phong1_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_phong4_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="2"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_phong4_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_phong4_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_blinn1_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="3"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_blinn1_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_blinn1_0" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+surface_material_override/0 = null
+
+[node name="polySurface2_blinn2_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="4"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_blinn2_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_blinn2_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_blinn4_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="5"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_blinn4_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_blinn4_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_blinn3_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="6"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_blinn3_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_blinn3_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_blinn5_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="7"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_blinn5_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_blinn5_0" index="0"]
+surface_material_override/0 = null
+
+[node name="polySurface2_anisotropic1_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D" index="8"]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="polySurface2_anisotropic1_0" parent="PlayerBoard/Basic Hoverboard/Skeleton3D/polySurface2_anisotropic1_0" index="0"]
+surface_material_override/0 = null
 
 [node name="MainCamera" type="Camera3D" parent="PlayerBoard"]
 transform = Transform3D(10, 0, 0, 0, 9.65926, 2.58819, 0, -2.58819, 9.65926, 0, 17.4024, 25.4062)
 current = true
 script = ExtResource("1_yns16")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="PlayerBoard"]
+environment = SubResource("Environment_s0b1v")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
@@ -100,11 +168,11 @@ script = ExtResource("3_nvx5r")
 transform = Transform3D(0.999912, -0.0132467, 0, 0.0132467, 0.999912, 0, 0, 0, 1, -5.02562, 0.160931, 1.5061)
 
 [node name="WallRidingZone" parent="CityEnvironment" instance=ExtResource("6_wall_zone")]
-transform = Transform3D(5, 3.72529e-08, 0, -3.72529e-08, 5, 0, 0, 0, 5, 23.1032, 2.17576, -102.088)
+transform = Transform3D(1, 3.35276e-08, 0, -1.95578e-08, 2.1, 0, 0, 0, 5, 31.9017, 78.4066, -114.506)
 wall_surface_gravity = Vector3(1, 0, 0)
 
 [node name="WallSurface" type="StaticBody3D" parent="CityEnvironment"]
-transform = Transform3D(-4.37114e-08, 1, -4.65661e-08, 1.11022e-16, -4.65661e-08, -1, -1, -4.37114e-08, 1.91069e-15, 27, 5, -102)
+transform = Transform3D(-3.0598e-08, 1, -4.42378e-09, 0, -4.47035e-08, -0.1, -0.7, -4.37114e-08, 1.91069e-16, 29.5217, 77.3533, -114.433)
 physics_material_override = SubResource("PhysicsMaterial_1c2mn")
 
 [node name="WallMesh" type="MeshInstance3D" parent="CityEnvironment/WallSurface"]
@@ -246,6 +314,18 @@ transform = Transform3D(7, 0, 0, 0, 12, 0, 0, 0, 7, 42.2133, -0.654202, 6.92452)
 [node name="tile-low3" parent="CityEnvironment" instance=ExtResource("11_e6bp4")]
 transform = Transform3D(4, 4.84288e-08, 0, -4.84288e-08, 4, 0, 0, 0, 4, 48.9385, 26.5373, 23.9608)
 
+[node name="road-slant-high5" parent="CityEnvironment" instance=ExtResource("5_uvywg")]
+physics_interpolation_mode = 1
+transform = Transform3D(-8.64267e-07, 6.25849e-07, -25, 14.2678, 20.5287, -5.96046e-08, 20.5287, -14.2678, -1.09278e-06, 122.024, 36.3471, 15.3851)
+
+[node name="road-straight6" parent="CityEnvironment" instance=ExtResource("7_6qu7l")]
+physics_interpolation_mode = 1
+transform = Transform3D(2.35194, -7.27315, 23.8027, 9.57241, 22.3341, 5.87855, -22.9747, 8.56093, 4.886, 147.045, 75.7841, -56.8798)
+
+[node name="road-curve14" parent="CityEnvironment" instance=ExtResource("8_6rtek")]
+physics_interpolation_mode = 1
+transform = Transform3D(1.98032, -4.62045, -24.4894, -9.64739, 22.5091, -5.02695, 22.9784, 9.84855, -1.07046e-06, 133.503, 48.6021, -4.54931)
+
 [node name="tile-low2" parent="CityEnvironment" instance=ExtResource("11_e6bp4")]
 transform = Transform3D(3.99965, 0.0529868, 0, -0.0529868, 3.99965, 0, 0, 0, 4, 52.7272, 26.515, 23.9443)
 
@@ -253,5 +333,21 @@ transform = Transform3D(3.99965, 0.0529868, 0, -0.0529868, 3.99965, 0, 0, 0, 4, 
 transform = Transform3D(0.749934, -0.00397401, 0, 0.00993502, 0.299974, 0, 0, 0, 0.825, -1.05902, -0.0627227, -0.0481224)
 launch_force = 18.0
 
+[node name="road-slant-flat-high4" parent="CityEnvironment" instance=ExtResource("8_83u0k")]
+physics_interpolation_mode = 1
+transform = Transform3D(4.92072, -4.61112, 24.0733, -0.342641, 24.5383, 4.77022, -24.5086, -1.26886, 4.76664, 146.094, 58.5844, -32.5874)
+
+[node name="Sketchfab_Scene" parent="CityEnvironment" instance=ExtResource("15_mqoja")]
+transform = Transform3D(-0.767043, 1.13358, -3.55944, -0.0384994, 2.75714, 1.57577, 2.90003, 0.336429, -0.920533, 93.8627, 123.111, -99.7489)
+
+[node name="GrindableRail" parent="CityEnvironment" instance=ExtResource("16_4c8v6")]
+transform = Transform3D(0.366352, 2.79397e-09, 0.99863, -1.39698e-09, 1, 0, -6.99041, 0, 0.052336, 4.40445, 36.0011, -19.8596)
+physics_material_override = SubResource("PhysicsMaterial_v87dk")
+
+[node name="EnhancedGravityZone" parent="CityEnvironment" instance=ExtResource("16_vn1nw")]
+transform = Transform3D(14.9987, 0.529869, 0, -0.198701, 39.9965, 0, 0, 0, 15, 157.749, 47.2736, -57.9407)
+gravity_strength_multiplier = 3.5
+
 [editable path="PlayerBoard"]
 [editable path="PlayerBoard/Basic Hoverboard"]
+[editable path="CityEnvironment/Sketchfab_Scene"]

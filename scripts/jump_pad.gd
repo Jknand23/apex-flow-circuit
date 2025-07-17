@@ -88,6 +88,10 @@ func _launch_player(player: CharacterBody3D) -> void:
 	if "is_jumping" in player:
 		player.is_jumping = true
 	
+	# Activate air resistance timer for realistic post-launch behavior
+	if player.has_method("activate_air_resistance"):
+		player.activate_air_resistance()
+	
 	# Trigger effects
 	_play_effects()
 	

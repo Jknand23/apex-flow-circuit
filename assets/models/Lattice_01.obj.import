@@ -1,0 +1,22 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://b1kpm3f408qro"
+path="res://.godot/imported/Lattice_01.obj-bef93019637c12f0830f76e0bfc2250f.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Lattice_01.obj-bef93019637c12f0830f76e0bfc2250f.mesh"]
+
+source_file="res://assets/models/Lattice_01.obj"
+dest_files=["res://.godot/imported/Lattice_01.obj-bef93019637c12f0830f76e0bfc2250f.mesh", "res://.godot/imported/Lattice_01.obj-bef93019637c12f0830f76e0bfc2250f.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true
+force_disable_mesh_compression=false
