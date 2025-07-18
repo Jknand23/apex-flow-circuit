@@ -1,5 +1,6 @@
-[gd_scene load_steps=27 format=3 uid="uid://doui6nhxgvl74"]
+[gd_scene load_steps=29 format=3 uid="uid://doui6nhxgvl74"]
 
+[ext_resource type="PackedScene" uid="uid://cld8frqa68rug" path="res://scenes/pause_menu.tscn" id="1_jhgln"]
 [ext_resource type="Script" path="res://scripts/main_camera.gd" id="1_yns16"]
 [ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board.tscn" id="2_4e1l4"]
 [ext_resource type="Script" path="res://scripts/cadence_manager.gd" id="3_nvx5r"]
@@ -17,6 +18,7 @@
 [ext_resource type="PackedScene" uid="uid://dm25dk4cy6v53" path="res://assets/models/environments/underwater_acrylic_tunnel_portal.glb" id="15_mqoja"]
 [ext_resource type="PackedScene" uid="uid://bjit8sylaj5ar" path="res://scenes/grindable_rail.tscn" id="16_4c8v6"]
 [ext_resource type="PackedScene" path="res://scenes/enhanced_gravity_zone.tscn" id="16_vn1nw"]
+[ext_resource type="Script" path="res://scripts/multiplayer_game_manager.gd" id="20_mp_manager"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_efcfb"]
 size = Vector2(50, 50)
@@ -55,6 +57,11 @@ friction = 2.0
 
 [node name="BasicTrackRoot" type="Node3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.127975, -1.90735e-06, 0.0527763)
+
+[node name="MultiplayerGameManager" type="Node" parent="."]
+script = ExtResource("20_mp_manager")
+
+[node name="PauseMenu" parent="." instance=ExtResource("1_jhgln")]
 
 [node name="TrackPlane" type="StaticBody3D" parent="."]
 

@@ -11,9 +11,13 @@ config_version=5
 [application]
 
 config/name="Apex Flow Circuit"
-run/main_scene="res://scenes/basic_track.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://scripts/globals/game_manager.gd"
 
 [global_group]
 

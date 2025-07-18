@@ -1,0 +1,206 @@
+[gd_scene load_steps=2 format=3 uid="uid://d3xvgo54w0mqy"]
+
+[ext_resource type="Script" path="res://scripts/multiplayer_lobby.gd" id="1_lobby_script"]
+
+[node name="MultiplayerLobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="TitleContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 30.0
+offset_right = 300.0
+offset_bottom = 130.0
+grow_horizontal = 2
+
+[node name="Title" type="Label" parent="TitleContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.91, 0.91, 1)
+theme_override_font_sizes/font_size = 48
+text = "GAME LOBBY"
+horizontal_alignment = 1
+
+[node name="LobbyCodeContainer" type="HBoxContainer" parent="TitleContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CodeLabel" type="Label" parent="TitleContainer/LobbyCodeContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+text = "Lobby Code: "
+
+[node name="CodeValue" type="Label" parent="TitleContainer/LobbyCodeContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "000000"
+
+[node name="PlayersContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -150.0
+offset_right = 400.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 50
+
+[node name="Player1Slot" type="Panel" parent="PlayersContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PlayersContainer/Player1Slot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayerLabel" type="Label" parent="PlayersContainer/Player1Slot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "PLAYER 1 (HOST)"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="PlayersContainer/Player1Slot/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+text = "Connected"
+horizontal_alignment = 1
+
+[node name="CharacterContainer" type="VBoxContainer" parent="PlayersContainer/Player1Slot/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CharacterLabel" type="Label" parent="PlayersContainer/Player1Slot/VBoxContainer/CharacterContainer"]
+layout_mode = 2
+text = "Character:"
+horizontal_alignment = 1
+
+[node name="CharacterSelect" type="OptionButton" parent="PlayersContainer/Player1Slot/VBoxContainer/CharacterContainer"]
+layout_mode = 2
+text = "Skater Male A"
+selected = 0
+
+[node name="ReadyButton" type="Button" parent="PlayersContainer/Player1Slot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "READY"
+
+[node name="Player2Slot" type="Panel" parent="PlayersContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PlayersContainer/Player2Slot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayerLabel" type="Label" parent="PlayersContainer/Player2Slot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "PLAYER 2"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="PlayersContainer/Player2Slot/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+text = "Waiting for player..."
+horizontal_alignment = 1
+
+[node name="CharacterContainer" type="VBoxContainer" parent="PlayersContainer/Player2Slot/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+visible = false
+
+[node name="CharacterLabel" type="Label" parent="PlayersContainer/Player2Slot/VBoxContainer/CharacterContainer"]
+layout_mode = 2
+text = "Character:"
+horizontal_alignment = 1
+
+[node name="CharacterSelect" type="OptionButton" parent="PlayersContainer/Player2Slot/VBoxContainer/CharacterContainer"]
+layout_mode = 2
+text = "Skater Male A"
+selected = 0
+
+[node name="ReadyButton" type="Button" parent="PlayersContainer/Player2Slot/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "READY"
+disabled = true
+visible = false
+
+[node name="BottomContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -80.0
+offset_right = 200.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="LeaveButton" type="Button" parent="BottomContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "LEAVE LOBBY"
+
+[node name="StartButton" type="Button" parent="BottomContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "START GAME"
+disabled = true
+
+[connection signal="item_selected" from="PlayersContainer/Player1Slot/VBoxContainer/CharacterContainer/CharacterSelect" to="." method="_on_player1_character_selected"]
+[connection signal="pressed" from="PlayersContainer/Player1Slot/VBoxContainer/ReadyButton" to="." method="_on_player1_ready_pressed"]
+[connection signal="item_selected" from="PlayersContainer/Player2Slot/VBoxContainer/CharacterContainer/CharacterSelect" to="." method="_on_player2_character_selected"]
+[connection signal="pressed" from="PlayersContainer/Player2Slot/VBoxContainer/ReadyButton" to="." method="_on_player2_ready_pressed"]
+[connection signal="pressed" from="BottomContainer/LeaveButton" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="BottomContainer/StartButton" to="." method="_on_start_pressed"] 

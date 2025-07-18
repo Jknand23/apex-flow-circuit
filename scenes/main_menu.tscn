@@ -1,0 +1,105 @@
+[gd_scene load_steps=4 format=3 uid="uid://6xvgo54w0mqy"]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_menu_script"]
+[ext_resource type="Texture2D" uid="uid://c83gb62603p1c" path="res://scenes/Screenshot 2025-07-17 154355.png" id="2_5dgjn"]
+
+[sub_resource type="Theme" id="Theme_6aylo"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="Screenshot2025-07-17154355" type="Sprite2D" parent="."]
+position = Vector2(330, 246)
+texture = ExtResource("2_5dgjn")
+
+[node name="TitleContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 50.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+
+[node name="GameTitle" type="Label" parent="TitleContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.91, 0.91, 1)
+theme_override_font_sizes/font_size = 72
+text = "APEX FLOW CIRCUIT"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="TitleContainer"]
+layout_mode = 2
+theme = SubResource("Theme_6aylo")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Master the urban flow. Outpace your rivals. Ride the future."
+horizontal_alignment = 1
+
+[node name="MenuContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -101.0
+offset_right = 150.0
+offset_bottom = 219.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="SinglePlayerButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "SINGLE PLAYER"
+
+[node name="MultiplayerButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "MULTIPLAYER"
+
+[node name="AchievementsButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "ACHIEVEMENTS"
+
+[node name="VictoryAnimationButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "VICTORY ANIMATION"
+
+[node name="QuitButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "QUIT"
+
+[connection signal="pressed" from="MenuContainer/SinglePlayerButton" to="." method="_on_single_player_pressed"]
+[connection signal="pressed" from="MenuContainer/MultiplayerButton" to="." method="_on_multiplayer_pressed"]
+[connection signal="pressed" from="MenuContainer/AchievementsButton" to="." method="_on_achievements_pressed"]
+[connection signal="pressed" from="MenuContainer/VictoryAnimationButton" to="." method="_on_victory_animation_pressed"]
+[connection signal="pressed" from="MenuContainer/QuitButton" to="." method="_on_quit_pressed"]

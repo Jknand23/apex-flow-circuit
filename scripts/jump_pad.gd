@@ -45,11 +45,18 @@ func _ready() -> void:
 ## Applies launch force to the player if cooldown has elapsed.
 ## @param body The body that entered the area.
 func _on_body_entered(body: Node3D) -> void:
-	print("Jump pad triggered by: ", body.name, " Groups: ", body.get_groups())
+	# More robust player detection for multiplayer
+	var is_player = body.is_in_group("player") or body.name.begins_with("Player_") or body is CharacterBody3D
+	
+	# Only print debug info for potential players
+	if is_player or body.name.contains("Player"):
+		print("Jump pad triggered by: ", body.name, " Groups: ", body.get_groups())
 	
 	# Check if it's the player and cooldown has elapsed
-	if not body.is_in_group("player"):
-		print("Not a player, ignoring")
+	if not is_player:
+		# Only print for actual player-like objects to reduce spam
+		if body.name.contains("Player") or body is CharacterBody3D:
+			print("Not a player, ignoring: ", body.name)
 		return
 		
 	var time_since_last = Time.get_ticks_msec() / 1000.0 - last_trigger_time

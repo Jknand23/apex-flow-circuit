@@ -31,6 +31,13 @@ var wall_ride_anchor: Area3D = null  # Reference to current wall ride anchor
 var air_resistance_timer: float = 0.0  # Timer for air resistance after bounce pad
 var current_gravity_multiplier: float = 1.0  # Current gravity strength multiplier from zones
 
+# Multiplayer sync variables
+var sync_position: Vector3 = Vector3.ZERO
+var sync_rotation: float = 0.0
+var sync_velocity: Vector3 = Vector3.ZERO
+const SYNC_RATE: float = 0.05  # Sync every 50ms
+var sync_timer: float = 0.0
+
 # Map for input actions (expandable, no enums).
 var input_actions := {
 	"forward": "move_forward",  # Custom action for W.
@@ -42,7 +49,7 @@ var input_actions := {
 }
 
 # Node references with error checking
-@onready var cadence_bar: ProgressBar = get_node("/root/BasicTrackRoot/UI/CadenceBar")
+@onready var cadence_bar: ProgressBar = get_node_or_null("/root/BasicTrackRoot/UI/CadenceBar")
 var trail: MeshInstance3D  # Will be set in _ready() with error checking
 var gravity_indicator_label: Label  # Optional UI indicator for enhanced gravity
 
@@ -65,6 +72,12 @@ func _ready() -> void:
 	
 	# Try to find gravity indicator UI (optional)
 	gravity_indicator_label = get_node_or_null("/root/BasicTrackRoot/UI/GravityIndicator")
+
+## Sets the cadence bar reference (used in multiplayer to assign correct UI)
+## @param bar The ProgressBar node to use for cadence display
+func set_cadence_bar(bar: ProgressBar) -> void:
+	cadence_bar = bar
+	print("Cadence bar set for player: ", name)
 
 # Recursive function to find Trail node anywhere in the tree
 func find_trail_recursive(node: Node) -> MeshInstance3D:
@@ -92,7 +105,8 @@ func get_turn_input() -> float:
 
 # Function to handle acceleration and velocity (updated for additive boost).
 # @param delta: float - Time since last physics frame.
-func apply_acceleration(delta: float) -> void:
+# @param process_input: bool - Whether to process player input (false for remote players).
+func apply_acceleration(delta: float, process_input: bool = true) -> void:
 	if not cadence_bar:
 		push_error("Cadence bar not found - check node path.")
 		return
@@ -100,7 +114,7 @@ func apply_acceleration(delta: float) -> void:
 	# Base acceleration (from Day 1) – build speed independently of Cadence.
 	# Only allow acceleration/deceleration when on ground
 	if is_on_floor():
-		if Input.is_action_pressed(input_actions["forward"]):
+		if process_input and Input.is_action_pressed(input_actions["forward"]):
 			current_speed = min(current_speed + ACCELERATION * delta, MAX_SPEED)
 		else:
 			current_speed = max(current_speed - ACCELERATION * delta, 0.0)  # Decelerate.
@@ -153,7 +167,8 @@ func apply_dodge(direction: float) -> void:
 
 # Function to apply gravity and jumping (updated to handle grind exit on jump).
 # @param delta: float - Time since last physics frame.
-func apply_gravity_and_jump(delta: float) -> void:
+# @param process_input: bool - Whether to process player input (false for remote players).
+func apply_gravity_and_jump(delta: float, process_input: bool = true) -> void:
 	if is_grinding:
 		velocity.y = 0.0  # No gravity/fall during grind (basic lock-in).
 		return
@@ -194,7 +209,7 @@ func apply_gravity_and_jump(delta: float) -> void:
 	else:
 		is_jumping = false  # Reset on land.
 	
-	if Input.is_action_just_pressed(input_actions["jump"]):
+	if process_input and Input.is_action_just_pressed(input_actions["jump"]):
 		if is_grinding:
 			is_grinding = false  # Exit grind on jump.
 		if is_on_floor() or is_grinding:  # Allow jump from ground or grind.
@@ -449,6 +464,14 @@ func _physics_process(delta: float) -> void:
 	# if Engine.get_process_frames() % 60 == 0:  # Every 60 frames (1 second at 60fps)
 	# 	print("Player position: ", global_position, " Current gravity: ", current_gravity_direction, " Multiplier: ", current_gravity_multiplier)
 	
+	# For multiplayer: only process input if we have authority over this player
+	var process_input = true
+	if multiplayer.has_multiplayer_peer() and is_multiplayer_authority():
+		process_input = true
+	elif multiplayer.has_multiplayer_peer() and not is_multiplayer_authority():
+		process_input = false
+		# TODO: Add interpolation for remote players here
+	
 	# Decrement air resistance timer
 	if air_resistance_timer > 0.0:
 		air_resistance_timer -= delta
@@ -458,18 +481,19 @@ func _physics_process(delta: float) -> void:
 		if dodge_cooldowns[key] > 0:
 			dodge_cooldowns[key] -= delta
 	
-	var turn_input := get_turn_input()
+	var turn_input := get_turn_input() if process_input else 0.0
 	
-	apply_acceleration(delta)
+	apply_acceleration(delta, process_input)
 	apply_turning(delta, turn_input)
 	
 	# Check for dodge inputs (works on ground or in air).
-	if Input.is_action_just_pressed(input_actions["dodge_left"]):
-		apply_dodge(-2.0)
-	if Input.is_action_just_pressed(input_actions["dodge_right"]):
-		apply_dodge(2.0)
+	if process_input:
+		if Input.is_action_just_pressed(input_actions["dodge_left"]):
+			apply_dodge(-2.0)
+		if Input.is_action_just_pressed(input_actions["dodge_right"]):
+			apply_dodge(2.0)
 	
-	apply_gravity_and_jump(delta)
+	apply_gravity_and_jump(delta, process_input)
 	
 	# Set up_direction based on current gravity for proper floor/wall detection
 	up_direction = -current_gravity_direction.normalized()
@@ -481,6 +505,20 @@ func _physics_process(delta: float) -> void:
 		_handle_wall_collisions()
 	
 	handle_collisions(get_slide_collision_count())  # Check for grinds/bails post-slide.
+	
+	# Handle multiplayer synchronization
+	if multiplayer.has_multiplayer_peer():
+		if is_multiplayer_authority():
+			# Send our position to other players
+			sync_timer += delta
+			if sync_timer >= SYNC_RATE:
+				sync_timer = 0.0
+				_receive_player_state.rpc(global_position, rotation.y, velocity)
+		else:
+			# Interpolate to received position for remote players
+			global_position = global_position.lerp(sync_position, 10.0 * delta)
+			rotation.y = lerp_angle(rotation.y, sync_rotation, 10.0 * delta)
+			velocity = velocity.lerp(sync_velocity, 10.0 * delta)
 
 func _process(_delta: float) -> void:
 	update_trail()
@@ -585,3 +623,16 @@ func snap_to_gravity_alignment(gravity_direction: Vector3) -> void:
 	target_gravity_direction = gravity_direction.normalized()
 	
 	# print("Player snapped to alignment - Up: ", new_up, " Scale preserved: ", original_scale)
+
+## RPC function to receive player state from other players
+## @param pos The position of the remote player
+## @param rot_y The Y rotation of the remote player
+## @param vel The velocity of the remote player
+@rpc("any_peer", "call_remote", "unreliable")
+func _receive_player_state(pos: Vector3, rot_y: float, vel: Vector3) -> void:
+	# Only accept updates from the player who has authority
+	var sender_id = multiplayer.get_remote_sender_id()
+	if sender_id == get_multiplayer_authority():
+		sync_position = pos
+		sync_rotation = rot_y
+		sync_velocity = vel

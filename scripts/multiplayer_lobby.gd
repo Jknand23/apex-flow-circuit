@@ -1,0 +1,269 @@
+## Multiplayer Lobby Script
+## Manages the lobby where both host and client wait before starting the game
+## Handles player slots, character selection, ready states, and game launch
+
+extends Control
+
+# Network constants
+const DEFAULT_PORT = 7000
+const MAX_CLIENTS = 1
+
+# Player data structure
+var players = {}
+var player_ready_status = {}
+var player_characters = {}
+var lobby_code = ""
+var is_host = false
+
+# Character options (add more as you create them)
+var character_options = [
+	"Skater Male A",
+	"Skater Female A", 
+	"Cyborg Female A",
+	"Criminal Male A"
+]
+
+# UI References
+@onready var code_label = $TitleContainer/LobbyCodeContainer/CodeValue
+@onready var player1_status = $PlayersContainer/Player1Slot/VBoxContainer/StatusLabel
+@onready var player2_status = $PlayersContainer/Player2Slot/VBoxContainer/StatusLabel
+@onready var player1_char_container = $PlayersContainer/Player1Slot/VBoxContainer/CharacterContainer
+@onready var player2_char_container = $PlayersContainer/Player2Slot/VBoxContainer/CharacterContainer
+@onready var player1_char_select = $PlayersContainer/Player1Slot/VBoxContainer/CharacterContainer/CharacterSelect
+@onready var player2_char_select = $PlayersContainer/Player2Slot/VBoxContainer/CharacterContainer/CharacterSelect
+@onready var player1_ready_btn = $PlayersContainer/Player1Slot/VBoxContainer/ReadyButton
+@onready var player2_ready_btn = $PlayersContainer/Player2Slot/VBoxContainer/ReadyButton
+@onready var start_button = $BottomContainer/StartButton
+@onready var player1_label = $PlayersContainer/Player1Slot/VBoxContainer/PlayerLabel
+@onready var player2_label = $PlayersContainer/Player2Slot/VBoxContainer/PlayerLabel
+
+# Called when the node enters the scene tree
+func _ready() -> void:
+	# Setup multiplayer callbacks
+	multiplayer.peer_connected.connect(_on_peer_connected)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	
+	# Setup character options
+	_setup_character_options()
+	
+	# Check if we're coming from main menu (hosting) or join screen (client)
+	if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		_setup_as_host()
+	else:
+		_setup_as_client()
+
+# Setup character dropdown options
+func _setup_character_options() -> void:
+	player1_char_select.clear()
+	player2_char_select.clear()
+	
+	for character in character_options:
+		player1_char_select.add_item(character)
+		player2_char_select.add_item(character)
+
+# Setup lobby as host
+func _setup_as_host() -> void:
+	is_host = true
+	
+	# Generate lobby code
+	lobby_code = str(randi() % 900000 + 100000)  # 6-digit code
+	code_label.text = lobby_code
+	
+	# Create server
+	var peer = ENetMultiplayerPeer.new()
+	var port = DEFAULT_PORT + (int(lobby_code) % 58535)  # Use code to offset port, keep within valid range (7000-65535)
+	var result = peer.create_server(port, MAX_CLIENTS)
+	
+	if result == OK:
+		multiplayer.multiplayer_peer = peer
+		print("Server started on port %d with lobby code %s" % [port, lobby_code])
+		
+		# Add host to players
+		var host_id = multiplayer.get_unique_id()
+		players[host_id] = {"name": "Host", "character": 0, "ready": false}
+		player_ready_status[host_id] = false
+		player_characters[host_id] = 0
+		
+		# Update UI
+		player1_label.text = "PLAYER 1 (HOST)"
+		player1_status.text = "Connected"
+		player1_status.modulate = Color.GREEN
+		
+		# Enable host controls
+		player1_char_select.disabled = false
+		player1_ready_btn.disabled = false
+	else:
+		print("Failed to create server: %d" % result)
+
+# Setup lobby as client
+func _setup_as_client() -> void:
+	is_host = false
+	
+	# The client is already connected from the join screen
+	# Request lobby info from host
+	_request_lobby_info.rpc_id(1)
+	
+	# Update UI for client
+	player1_label.text = "PLAYER 1 (HOST)"
+	player2_label.text = "PLAYER 2 (YOU)"
+	
+	# Disable host controls for client
+	player1_char_select.disabled = true
+	player1_ready_btn.disabled = true
+	player1_ready_btn.visible = false
+	
+	# Enable client controls
+	player2_char_container.visible = true
+	player2_char_select.disabled = false
+	player2_ready_btn.visible = true
+	player2_ready_btn.disabled = false
+	player2_status.text = "Connected"
+	player2_status.modulate = Color.GREEN
+
+# Called when a peer connects (server only)
+func _on_peer_connected(id: int) -> void:
+	print("Player connected: %d" % id)
+	
+	if is_host:
+		# Add new player
+		players[id] = {"name": "Player 2", "character": 0, "ready": false}
+		player_ready_status[id] = false
+		player_characters[id] = 0
+		
+		# Update UI
+		player2_status.text = "Connected"
+		player2_status.modulate = Color.GREEN
+		
+		# Send current lobby state to new player
+		_receive_lobby_info.rpc_id(id, lobby_code, players, player_ready_status, player_characters)
+
+# Called when a peer disconnects
+func _on_peer_disconnected(id: int) -> void:
+	print("Player disconnected: %d" % id)
+	
+	if is_host:
+		# Remove player
+		players.erase(id)
+		player_ready_status.erase(id)
+		player_characters.erase(id)
+		
+		# Update UI
+		player2_status.text = "Waiting for player..."
+		player2_status.modulate = Color.GRAY
+		
+		# Disable start button
+		start_button.disabled = true
+
+# RPC functions
+@rpc("any_peer", "call_local")
+func _request_lobby_info() -> void:
+	pass  # Server will respond with _receive_lobby_info
+
+@rpc("authority", "call_remote")
+func _receive_lobby_info(code: String, lobby_players: Dictionary, ready_status: Dictionary, characters: Dictionary) -> void:
+	lobby_code = code
+	players = lobby_players
+	player_ready_status = ready_status
+	player_characters = characters
+	code_label.text = lobby_code
+	_update_ui()
+
+@rpc("any_peer", "call_local", "reliable")
+func _update_player_character(player_id: int, character_index: int) -> void:
+	player_characters[player_id] = character_index
+	if players.has(player_id):
+		players[player_id]["character"] = character_index
+	_update_ui()
+
+@rpc("any_peer", "call_local", "reliable")
+func _update_player_ready(player_id: int, ready: bool) -> void:
+	player_ready_status[player_id] = ready
+	if players.has(player_id):
+		players[player_id]["ready"] = ready
+	_update_ui()
+
+@rpc("authority", "call_local", "reliable")
+func _start_game() -> void:
+	print("Starting multiplayer game...")
+	# Store game data in GameManager
+	GameManager.start_multiplayer_game(players)
+	GameManager.is_host = is_host
+	GameManager.lobby_code = lobby_code
+	get_tree().change_scene_to_file("res://scenes/basic_track.tscn")
+
+# Update UI based on current state
+func _update_ui() -> void:
+	# Update character selections
+	for player_id in players:
+		if player_id == 1:  # Host
+			player1_char_select.selected = player_characters.get(player_id, 0)
+		else:  # Client
+			player2_char_select.selected = player_characters.get(player_id, 0)
+	
+	# Update ready buttons
+	var my_id = multiplayer.get_unique_id()
+	if my_id == 1:  # Host
+		player1_ready_btn.text = "READY" if not player_ready_status.get(my_id, false) else "NOT READY"
+		player1_ready_btn.modulate = Color.WHITE if not player_ready_status.get(my_id, false) else Color.GREEN
+	else:  # Client
+		player2_ready_btn.text = "READY" if not player_ready_status.get(my_id, false) else "NOT READY"
+		player2_ready_btn.modulate = Color.WHITE if not player_ready_status.get(my_id, false) else Color.GREEN
+	
+	# Update other player's ready status
+	for player_id in players:
+		if player_id != my_id:
+			if player_id == 1:  # Host (from client's perspective)
+				player1_ready_btn.text = "READY" if player_ready_status.get(player_id, false) else "NOT READY"
+				player1_ready_btn.modulate = Color.GREEN if player_ready_status.get(player_id, false) else Color.WHITE
+			else:  # Client (from host's perspective)
+				# Just show visual indication since client can't see other's button
+				if player_ready_status.get(player_id, false):
+					player2_status.text = "Ready!"
+					player2_status.modulate = Color.GREEN
+				else:
+					player2_status.text = "Connected"
+					player2_status.modulate = Color.GREEN
+	
+	# Enable start button if host and all players are ready
+	if is_host:
+		var all_ready = true
+		for player_id in players:
+			if not player_ready_status.get(player_id, false):
+				all_ready = false
+				break
+		start_button.disabled = not (all_ready and players.size() == 2)
+
+# Button handlers
+func _on_player1_character_selected(index: int) -> void:
+	if is_host:
+		var my_id = multiplayer.get_unique_id()
+		_update_player_character.rpc(my_id, index)
+
+func _on_player2_character_selected(index: int) -> void:
+	if not is_host:
+		var my_id = multiplayer.get_unique_id()
+		_update_player_character.rpc(my_id, index)
+
+func _on_player1_ready_pressed() -> void:
+	if is_host:
+		var my_id = multiplayer.get_unique_id()
+		var new_ready = not player_ready_status.get(my_id, false)
+		_update_player_ready.rpc(my_id, new_ready)
+
+func _on_player2_ready_pressed() -> void:
+	if not is_host:
+		var my_id = multiplayer.get_unique_id()
+		var new_ready = not player_ready_status.get(my_id, false)
+		_update_player_ready.rpc(my_id, new_ready)
+
+func _on_start_pressed() -> void:
+	if is_host:
+		print("Host starting game...")
+		_start_game.rpc()
+
+func _on_leave_pressed() -> void:
+	# Clean up network connection and reset state
+	GameManager.reset_multiplayer_state()
+	
+	# Return to multiplayer menu
+	get_tree().change_scene_to_file("res://scenes/multiplayer_menu.tscn") 
