@@ -13,6 +13,9 @@ func _ready() -> void:
 # Handle single player button press - launches the game
 func _on_single_player_pressed() -> void:
 	print("Starting single player mode...")
+	# Set single player defaults
+	GameManager.is_multiplayer_game = false
+	GameManager.my_character_index = 0  # Default to first character
 	# Change to the basic track scene which is the single player mode
 	get_tree().change_scene_to_file("res://scenes/basic_track.tscn")
 

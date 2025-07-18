@@ -4,8 +4,8 @@
 
 extends Node
 
-# Player scene to spawn
-const PLAYER_SCENE = preload("res://scenes/player_board.tscn")
+# Player scene to spawn - removed preload since we load dynamically based on character
+# const PLAYER_SCENE = preload("res://scenes/player_board.tscn")
 
 # Spawn positions for each player (based on single player spawn)
 const SPAWN_POSITIONS = [
@@ -25,9 +25,16 @@ func _ready() -> void:
 		print("Not a multiplayer game, skipping multiplayer spawning")
 		return
 		
+	print("=== MULTIPLAYER MANAGER DEBUG ===")
 	print("Multiplayer Game Manager starting...")
 	print("Player data: ", GameManager.player_data)
 	print("Is host: ", GameManager.is_host)
+	
+	# Debug player data in detail
+	for player_id in GameManager.player_data:
+		var player_info = GameManager.player_data[player_id]
+		print("Player ", player_id, ": ", player_info)
+		print("  - Character index: ", player_info.get("character", "NOT_SET"))
 	
 	# Debug: Check for existing cameras in the scene
 	var existing_cameras = get_tree().get_nodes_in_group("@all_nodes")
@@ -50,7 +57,10 @@ func _ready() -> void:
 	await get_tree().create_timer(0.1).timeout
 	
 	# Spawn players based on who's in the game
+	print("About to spawn all players...")
 	_spawn_all_players()
+	
+	print("=== END MULTIPLAYER MANAGER DEBUG ===")
 	
 	# Add a debug camera if no camera is active
 	await get_tree().process_frame
@@ -137,8 +147,25 @@ func _spawn_all_players() -> void:
 ## @param player_id The network ID of the player
 ## @param spawn_index The index for spawn position (0 or 1)
 func _spawn_player(player_id: int, spawn_index: int) -> void:
+	# Get the selected character index for this player
+	var character_index = 0  # Default to first character
+	if GameManager.player_data.has(player_id):
+		character_index = GameManager.player_data[player_id].get("character", 0)
+	
+	print("Spawning player ", player_id, " with character index: ", character_index)
+	
+	# Load the appropriate player board scene based on character selection
+	var player_scene_path = GameManager.get_player_board_scene(character_index)
+	print("Loading player board scene: ", player_scene_path)
+	
+	var player_scene = load(player_scene_path)
+	if not player_scene:
+		push_error("Failed to load player board scene: " + player_scene_path)
+		# Fallback to default skater male scene
+		player_scene = load("res://scenes/player_board_skater_male.tscn")
+	
 	# Instantiate player scene
-	var player_instance = PLAYER_SCENE.instantiate()
+	var player_instance = player_scene.instantiate()
 	
 	# Set unique name for network identification
 	player_instance.name = "Player_" + str(player_id)
@@ -158,6 +185,10 @@ func _spawn_player(player_id: int, spawn_index: int) -> void:
 	
 	# Add to scene
 	get_node("/root/BasicTrackRoot").add_child(player_instance)
+	
+	# Avatar is already in the player board scene with correct skin
+	# No need to add it again
+	# _add_avatar_to_player(player_instance, player_id)
 	
 	# Add camera to the player (since it's not in player_board.tscn)
 	_add_camera_to_player(player_instance)
@@ -187,6 +218,74 @@ func _spawn_player(player_id: int, spawn_index: int) -> void:
 	_verify_camera_state(player_instance, player_id)
 	
 	print("Spawned player ", player_id, " at ", player_instance.position)
+
+## Adds an avatar to the spawned player with the correct skin
+## @param player The player instance to add avatar to
+## @param player_id The network ID to get character selection from
+func _add_avatar_to_player(player: Node3D, player_id: int) -> void:
+	print("=== ADDING AVATAR DEBUG ===")
+	print("Checking avatar for player: ", player.name, " (ID: ", player_id, ")")
+	
+	# With pre-configured player boards, the avatar should already be present with the correct skin
+	# Just verify it exists and set position if needed
+	var existing_avatar = player.get_node_or_null("Avatar")
+	if existing_avatar:
+		print("Avatar already exists in player board scene with pre-applied skin")
+		# Position the avatar appropriately if needed
+		existing_avatar.position = Vector3(0, 1, 0)  # Above the board
+		print("Avatar positioned at: ", existing_avatar.position)
+		return
+	
+	# Fallback: If for some reason the avatar isn't there, add it
+	print("Avatar not found in pre-configured scene, adding manually...")
+	
+	# Get the selected character index for this player
+	var character_index = 0  # Default to first character
+	if GameManager.player_data.has(player_id):
+		character_index = GameManager.player_data[player_id].get("character", 0)
+		print("Found character index in player data: ", character_index)
+	else:
+		print("Player ID ", player_id, " not found in player_data: ", GameManager.player_data)
+	
+	print("Selected character index: ", character_index)
+	
+	# Load and instantiate the avatar scene
+	const AVATAR_SCENE = preload("res://scenes/avatar.tscn")
+	var avatar_instance = AVATAR_SCENE.instantiate()
+	avatar_instance.name = "Avatar"
+	
+	print("Avatar instance created: ", avatar_instance.name)
+	
+	# Add avatar to player
+	player.add_child(avatar_instance)
+	print("Avatar added as child to player")
+	
+	# Position the avatar appropriately (you may need to adjust this)
+	avatar_instance.position = Vector3(0, 1, 0)  # Above the board
+	avatar_instance.scale = Vector3(1, 1, 1)  # Avatar should already be scaled in the scene
+	
+	print("Avatar positioned at: ", avatar_instance.position)
+	
+	# Wait a frame for the avatar to be ready
+	await get_tree().process_frame
+	print("Waited one frame for avatar to be ready")
+	
+	# Apply the selected skin
+	var skin_path = GameManager.get_character_skin(character_index)
+	print("Skin path to apply: ", skin_path)
+	
+	if avatar_instance.has_method("change_skin"):
+		print("Avatar has change_skin method, calling it...")
+		avatar_instance.change_skin(skin_path)
+		print("Applied skin: ", skin_path, " to player ", player_id)
+	else:
+		push_warning("Avatar instance doesn't have change_skin method")
+		print("Avatar script: ", avatar_instance.get_script())
+		print("Avatar children: ")
+		for child in avatar_instance.get_children():
+			print("  - ", child.name, " (", child.get_class(), ")")
+	
+	print("=== END AVATAR DEBUG ===")
 
 ## Configures the local player (the one we control)
 ## @param player The player instance to configure

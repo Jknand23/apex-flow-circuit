@@ -1,25 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://cx8li6apl3yxi"]
+[gd_scene load_steps=3 format=3 uid="uid://bavatar"]
 
-[ext_resource type="Shader" path="res://shaders/cel_shader.gdshader" id="2_515uv"]
-[ext_resource type="PackedScene" uid="uid://y6xyixctgnwd" path="res://assets/models/avatars/characterMedium.fbx" id="2_yl3qb"]
-[ext_resource type="Texture2D" uid="uid://b1rvl3imytga2" path="res://assets/textures/avatars/skins/criminalMaleA.png" id="3_nwwbo"]
+[ext_resource type="PackedScene" uid="uid://bcharacter" path="res://assets/models/avatars/characterMedium.fbx" id="1_character"]
+[ext_resource type="Script" path="res://scripts/avatar.gd" id="2_avatar_script"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_frwd6"]
+[node name="Avatar" type="Node3D"]
+script = ExtResource("2_avatar_script")
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_bpl6d"]
-render_priority = 0
-next_pass = SubResource("ShaderMaterial_frwd6")
-shader = ExtResource("2_515uv")
-shader_parameter/cel_levels = 2.0
-shader_parameter/base_color = Color(1, 1, 1, 1)
-shader_parameter/albedo_texture = ExtResource("3_nwwbo")
-
-[node name="AvatarRoot" type="Node3D"]
-
-[node name="characterMedium" parent="." instance=ExtResource("2_yl3qb")]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
-
-[node name="characterMedium" parent="characterMedium/Root/Skeleton3D" index="0"]
-surface_material_override/0 = SubResource("ShaderMaterial_bpl6d")
-
-[editable path="characterMedium"]
+[node name="characterMedium" parent="." instance=ExtResource("1_character")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0) 

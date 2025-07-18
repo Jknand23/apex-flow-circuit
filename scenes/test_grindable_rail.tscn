@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://test_grind_rail"]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="PackedScene" uid="uid://bplayer_board" path="res://scenes/player_board.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board_skater_male.tscn" id="1"]
 [ext_resource type="PackedScene" uid="uid://bjit8sylaj5ar" path="res://scenes/grindable_rail.tscn" id="2"]
 [ext_resource type="Script" path="res://scripts/debug_grind_rails.gd" id="3"]
+
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_1"]
 size = Vector2(50, 50)

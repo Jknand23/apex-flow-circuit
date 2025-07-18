@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3 uid="uid://cx8li6apl3yxi"]
+
+[ext_resource type="Script" path="res://scripts/avatar.gd" id="1_1ebwl"]
+[ext_resource type="PackedScene" uid="uid://y6xyixctgnwd" path="res://assets/models/avatars/characterMedium.fbx" id="2_jqffn"]
+[ext_resource type="Texture2D" uid="uid://cpeoxl6u031nm" path="res://assets/textures/avatars/skins/skaterMaleA.png" id="3_h3spm"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8nm0b"]
+albedo_texture = ExtResource("3_h3spm")
+
+[node name="AvatarRoot" type="Node3D"]
+script = ExtResource("1_1ebwl")
+
+[node name="characterMedium" parent="." instance=ExtResource("2_jqffn")]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+
+[node name="characterMedium" parent="characterMedium/Root/Skeleton3D" index="0"]
+surface_material_override/0 = SubResource("StandardMaterial3D_8nm0b")
+
+[editable path="characterMedium"]

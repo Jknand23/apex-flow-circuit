@@ -1,4 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://53351mnn0akw"]
+[gd_scene load_steps=5 format=3 uid="uid://53351mnn0akw"]
+
+[ext_resource type="PackedScene" uid="uid://b35ey66ytyca2" path="res://scenes/rail.tscn" id="1_o1vpy"]
+[ext_resource type="PackedScene" uid="uid://dl6meropkaki4" path="res://scenes/hazard.tscn" id="2_mlp0f"]
+[ext_resource type="PackedScene" uid="uid://bguok2j2qcy4w" path="res://scenes/gravity_flip_zone.tscn" id="3_6djku"]
 
 [sub_resource type="GDScript" id="GDScript_2cov3"]
 script/source = "# scripts/city_track_generator.gd
@@ -545,3 +549,9 @@ min_vertical_height = 15.0
 max_section_distance = 60.0
 rails_per_building = 4
 rooftop_offset = 3.0
+rail_scene = ExtResource("1_o1vpy")
+hazard_scene = ExtResource("2_mlp0f")
+gravity_zone_scene = ExtResource("3_6djku")
+spiral_path_prefab = null
+generate_track = false
+clear_track = false

@@ -27,6 +27,22 @@ var character_skins = [
 	"res://assets/textures/avatars/skins/criminalMaleA.png"
 ]
 
+# Player board scene paths for each character
+var player_board_scenes = [
+	"res://scenes/player_board_skater_male.tscn",
+	"res://scenes/player_board_skater_female.tscn",
+	"res://scenes/player_board_cyborg_female.tscn",
+	"res://scenes/player_board_criminal_male.tscn"
+]
+
+# Avatar scene paths for each character (if using separate avatar scenes)
+var avatar_scenes = [
+	"res://scenes/skater_male.tscn",
+	"res://scenes/skater_female.tscn",
+	"res://scenes/cyborg_female.tscn",
+	"res://scenes/criminal_male.tscn"
+]
+
 # Called when the node enters the scene tree
 func _ready() -> void:
 	# Make sure this node persists across scene changes
@@ -55,6 +71,29 @@ func get_character_skin(index: int) -> String:
 	if index >= 0 and index < character_skins.size():
 		return character_skins[index]
 	return character_skins[0]  # Default to first
+
+# Get player board scene path for a given index
+func get_player_board_scene(index: int) -> String:
+	if index >= 0 and index < player_board_scenes.size():
+		return player_board_scenes[index]
+	return player_board_scenes[0]  # Default to first
+
+# Get avatar scene path for a given index
+func get_avatar_scene(index: int) -> String:
+	if index >= 0 and index < avatar_scenes.size():
+		return avatar_scenes[index]
+	return avatar_scenes[0]  # Default to first
+
+## Applies a character skin to an avatar node
+## @param avatar_node The avatar node to apply the skin to
+## @param character_index The index of the character skin to apply
+func apply_character_skin(avatar_node: Node3D, character_index: int) -> void:
+	if avatar_node and avatar_node.has_method("change_skin"):
+		var skin_path = get_character_skin(character_index)
+		avatar_node.change_skin(skin_path)
+		print("GameManager applied skin: ", skin_path, " (index: ", character_index, ")")
+	else:
+		push_warning("Cannot apply skin - avatar node invalid or missing change_skin method")
 
 # Store player data when starting a multiplayer game
 func start_multiplayer_game(players: Dictionary) -> void:

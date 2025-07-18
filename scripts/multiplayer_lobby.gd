@@ -69,6 +69,9 @@ func _setup_as_host() -> void:
 	lobby_code = str(randi() % 900000 + 100000)  # 6-digit code
 	code_label.text = lobby_code
 	
+	print("=== HOST LOBBY SETUP DEBUG ===")
+	print("Generated lobby code: ", lobby_code)
+	
 	# Create server
 	var peer = ENetMultiplayerPeer.new()
 	var port = DEFAULT_PORT + (int(lobby_code) % 58535)  # Use code to offset port, keep within valid range (7000-65535)
@@ -84,6 +87,10 @@ func _setup_as_host() -> void:
 		player_ready_status[host_id] = false
 		player_characters[host_id] = 0
 		
+		print("Host player ID: ", host_id)
+		print("Initial players data: ", players)
+		print("Initial player_characters: ", player_characters)
+		
 		# Update UI
 		player1_label.text = "PLAYER 1 (HOST)"
 		player1_status.text = "Connected"
@@ -92,8 +99,11 @@ func _setup_as_host() -> void:
 		# Enable host controls
 		player1_char_select.disabled = false
 		player1_ready_btn.disabled = false
+		print("Host controls enabled")
 	else:
 		print("Failed to create server: %d" % result)
+	
+	print("=== END HOST LOBBY SETUP DEBUG ===")
 
 # Setup lobby as client
 func _setup_as_client() -> void:
@@ -170,26 +180,54 @@ func _receive_lobby_info(code: String, lobby_players: Dictionary, ready_status: 
 
 @rpc("any_peer", "call_local", "reliable")
 func _update_player_character(player_id: int, character_index: int) -> void:
+	print("=== UPDATE PLAYER CHARACTER RPC DEBUG ===")
+	print("Received character update RPC")
+	print("Player ID: ", player_id)
+	print("Character index: ", character_index)
+	print("Before update - player_characters: ", player_characters)
+	print("Before update - players: ", players)
+	
 	player_characters[player_id] = character_index
 	if players.has(player_id):
 		players[player_id]["character"] = character_index
+		print("Updated players[", player_id, "][character] = ", character_index)
+	else:
+		print("ERROR: Player ID ", player_id, " not found in players dictionary!")
+	
+	print("After update - player_characters: ", player_characters)
+	print("After update - players: ", players)
+	
 	_update_ui()
+	print("=== END UPDATE PLAYER CHARACTER RPC DEBUG ===")
 
 @rpc("any_peer", "call_local", "reliable")
 func _update_player_ready(player_id: int, ready: bool) -> void:
+	print("=== UPDATE PLAYER READY RPC DEBUG ===")
+	print("Player ID: ", player_id, " ready: ", ready)
+	
 	player_ready_status[player_id] = ready
 	if players.has(player_id):
 		players[player_id]["ready"] = ready
 	_update_ui()
+	print("=== END UPDATE PLAYER READY RPC DEBUG ===")
 
 @rpc("authority", "call_local", "reliable")
 func _start_game() -> void:
+	print("=== START GAME RPC DEBUG ===")
 	print("Starting multiplayer game...")
+	print("About to call GameManager.start_multiplayer_game with players: ", players)
+	
 	# Store game data in GameManager
 	GameManager.start_multiplayer_game(players)
 	GameManager.is_host = is_host
 	GameManager.lobby_code = lobby_code
+	
+	print("GameManager.player_data after start_multiplayer_game: ", GameManager.player_data)
+	print("GameManager.is_multiplayer_game: ", GameManager.is_multiplayer_game)
+	
+	print("Changing scene to basic_track.tscn...")
 	get_tree().change_scene_to_file("res://scenes/basic_track.tscn")
+	print("=== END START GAME RPC DEBUG ===")
 
 # Update UI based on current state
 func _update_ui() -> void:
@@ -235,31 +273,71 @@ func _update_ui() -> void:
 
 # Button handlers
 func _on_player1_character_selected(index: int) -> void:
+	print("=== PLAYER 1 CHARACTER SELECTION DEBUG ===")
+	print("Character selected - index: ", index)
+	print("Is host: ", is_host)
+	print("Current player_characters before update: ", player_characters)
+	
 	if is_host:
 		var my_id = multiplayer.get_unique_id()
+		print("Host ID: ", my_id)
+		print("Sending character update RPC...")
 		_update_player_character.rpc(my_id, index)
+		print("Host selected character index: ", index)
+	else:
+		print("ERROR: Player 1 selection called but not host!")
+	
+	print("=== END PLAYER 1 CHARACTER SELECTION DEBUG ===")
 
 func _on_player2_character_selected(index: int) -> void:
+	print("=== PLAYER 2 CHARACTER SELECTION DEBUG ===")
+	print("Character selected - index: ", index)
+	print("Is host: ", is_host)
+	print("Current player_characters before update: ", player_characters)
+	
 	if not is_host:
 		var my_id = multiplayer.get_unique_id()
+		print("Client ID: ", my_id)
+		print("Sending character update RPC...")
 		_update_player_character.rpc(my_id, index)
+		print("Client selected character index: ", index)
+	else:
+		print("ERROR: Player 2 selection called but is host!")
+	
+	print("=== END PLAYER 2 CHARACTER SELECTION DEBUG ===")
 
 func _on_player1_ready_pressed() -> void:
+	print("=== PLAYER 1 READY DEBUG ===")
 	if is_host:
 		var my_id = multiplayer.get_unique_id()
 		var new_ready = not player_ready_status.get(my_id, false)
+		print("Host ready state changing to: ", new_ready)
 		_update_player_ready.rpc(my_id, new_ready)
 
 func _on_player2_ready_pressed() -> void:
+	print("=== PLAYER 2 READY DEBUG ===")
 	if not is_host:
 		var my_id = multiplayer.get_unique_id()
 		var new_ready = not player_ready_status.get(my_id, false)
+		print("Client ready state changing to: ", new_ready)
 		_update_player_ready.rpc(my_id, new_ready)
 
 func _on_start_pressed() -> void:
 	if is_host:
+		print("=== STARTING GAME DEBUG ===")
 		print("Host starting game...")
+		print("Final players data: ", players)
+		print("Final player_characters: ", player_characters)
+		print("Final player_ready_status: ", player_ready_status)
+		
+		# Verify all players have character selections
+		for player_id in players:
+			var character_index = players[player_id].get("character", -1)
+			print("Player ", player_id, " character index: ", character_index)
+		
+		print("Calling _start_game.rpc()")
 		_start_game.rpc()
+		print("=== END STARTING GAME DEBUG ===")
 
 func _on_leave_pressed() -> void:
 	# Clean up network connection and reset state

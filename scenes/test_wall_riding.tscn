@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://b8x2v4n9qw1r5"]
+[gd_scene load_steps=6 format=3 uid="uid://b8x2v4oaqw1r5"]
 
-[ext_resource type="PackedScene" uid="uid://cw7h4v2j9nq8x" path="res://scenes/wall_riding_zone.tscn" id="1_wall_zone"]
-[ext_resource type="PackedScene" path="res://scenes/player_board.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://cw7h4v2kanq8x" path="res://scenes/wall_riding_zone.tscn" id="1_wall_zone"]
+[ext_resource type="PackedScene" uid="uid://j56fmyricof2" path="res://scenes/player_board_skater_male.tscn" id="2_player"]
+
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall"]
 size = Vector3(1, 20, 20)
