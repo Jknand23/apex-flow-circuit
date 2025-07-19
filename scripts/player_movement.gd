@@ -17,8 +17,9 @@ const WALL_GRAVITY_MULTIPLIER: float = 4.0  # Make wall gravity stronger but not
 const GRAVITY_TRANSITION_SPEED: float = 10.0  # Increased for faster transitions, especially for walls
 const ROTATION_TRANSITION_SPEED: float = 12.0  # Increased further for quicker rotation to full alignment
 @export var enable_wall_rotation: bool = true  # Toggle player rotation during wall riding
-const AIR_RESISTANCE: float = 4.5  # How much horizontal speed reduces in air per second
-const AIR_RESISTANCE_DURATION: float = 3.0  # Seconds to apply air resistance after bounce pad
+const AIR_RESISTANCE: float = 2.5  # How much horizontal speed reduces in air per second (global)
+const BOUNCE_PAD_AIR_RESISTANCE: float = 3.5  # Additional air resistance after bounce pads
+const AIR_RESISTANCE_DURATION: float = 3.0  # Seconds to apply extra air resistance after bounce pad
 
 # Descriptive state vars.
 var current_speed: float = 0.0
@@ -28,7 +29,7 @@ var dodge_cooldowns := { "left": 0.0, "right": 0.0 }  # Timers for each dodge di
 var current_gravity_direction: Vector3 = Vector3.DOWN  # Current gravity direction
 var target_gravity_direction: Vector3 = Vector3.DOWN  # Target gravity direction for smooth transitions
 var wall_ride_anchor: Area3D = null  # Reference to current wall ride anchor
-var air_resistance_timer: float = 0.0  # Timer for air resistance after bounce pad
+var bounce_pad_air_resistance_timer: float = 0.0  # Timer for extra air resistance after bounce pad
 var current_gravity_multiplier: float = 1.0  # Current gravity strength multiplier from zones
 
 # Multiplayer sync variables
@@ -56,16 +57,9 @@ var gravity_indicator_label: Label  # Optional UI indicator for enhanced gravity
 func _ready() -> void:
 	# Add player to group for detection by interactive elements
 	add_to_group("player")
-	# print("Player added to group 'player'. Player groups: ", get_groups())
-	# print("Player node name: ", name)
-	# print("Player class: ", get_class())
 	
 	# Search recursively for the Trail node
 	trail = find_trail_recursive(self)
-	# if trail:
-	# 	print("Found trail at path: ", get_path_to(trail))
-	# else:
-	# 	print("Trail not found anywhere in the scene tree")
 	
 	# Connect to gravity zones in the scene
 	_connect_gravity_zones()
@@ -77,7 +71,6 @@ func _ready() -> void:
 ## @param bar The ProgressBar node to use for cadence display
 func set_cadence_bar(bar: ProgressBar) -> void:
 	cadence_bar = bar
-	print("Cadence bar set for player: ", name)
 
 # Recursive function to find Trail node anywhere in the tree
 func find_trail_recursive(node: Node) -> MeshInstance3D:
@@ -93,6 +86,57 @@ func find_trail_recursive(node: Node) -> MeshInstance3D:
 	
 	return null
 
+## Enhanced ground detection that checks for ANY ground contact
+## Uses collision detection to determine if any part of the player is touching surfaces
+## @return bool True if any part of the player is touching the ground/surfaces
+func is_touching_ground() -> bool:
+	# First check the standard is_on_floor() for basic ground contact
+	if is_on_floor():
+		return true
+	
+	# Additionally check if we're colliding with any surfaces that could be considered "ground"
+	# This includes walls during wall riding and any other collision surfaces
+	for i in get_slide_collision_count():
+		var collision = get_slide_collision(i)
+		if collision:
+			var normal = collision.get_normal()
+			var collider = collision.get_collider()
+			
+			# Check if the collision normal is reasonably aligned with our "up" direction
+			# This allows for wall riding and partial ground contact detection
+			var up_alignment = normal.dot(up_direction.normalized())
+			
+			# Consider it ground contact if:
+			# 1. Normal points "up" relative to our orientation (standard ground: up_alignment > 0.3)
+			# 2. OR we're wall riding and any surface contact counts (for wall riding stability)
+			var is_wall_riding = abs(current_gravity_direction.x) > 0.1 or abs(current_gravity_direction.z) > 0.1
+			
+			if up_alignment > 0.3 or (is_wall_riding and abs(up_alignment) > 0.1):
+				# Exclude grindable rails from ground detection (they have special handling)
+				if collider and not collider.is_in_group("grindable"):
+					return true
+	
+	# Backup method: Use raycast to detect ground below player
+	var space_state = get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(
+		global_position,
+		global_position + current_gravity_direction.normalized() * 2.0  # Cast 2 units in gravity direction
+	)
+	query.exclude = [self]  # Don't hit ourselves
+	query.collision_mask = 0xFFFFFFFF  # Check all collision layers
+	
+	var result = space_state.intersect_ray(query)
+	if result:
+		# Don't exclude grindable rails here since we want to detect when sitting on ground near rails
+		if result.collider and not result.collider.is_in_group("grindable"):
+			return true
+	
+	# Check if we're grinding (grinding rails count as "ground" for air resistance purposes)
+	if is_grinding:
+		return true
+	
+	return false
+
 # Function to get turn input direction.
 # Returns: float - -1 (left), 0 (none), 1 (right).
 func get_turn_input() -> float:
@@ -103,7 +147,7 @@ func get_turn_input() -> float:
 		turn_direction += 1.0
 	return turn_direction
 
-# Function to handle acceleration and velocity (updated for additive boost).
+# Function to handle acceleration and velocity (updated for global air resistance).
 # @param delta: float - Time since last physics frame.
 # @param process_input: bool - Whether to process player input (false for remote players).
 func apply_acceleration(delta: float, process_input: bool = true) -> void:
@@ -112,16 +156,21 @@ func apply_acceleration(delta: float, process_input: bool = true) -> void:
 		return
 	
 	# Base acceleration (from Day 1) – build speed independently of Cadence.
-	# Only allow acceleration/deceleration when on ground
-	if is_on_floor():
+	# Only allow acceleration/deceleration when touching ground (using enhanced detection)
+	var touching_ground = is_touching_ground()
+	
+	if touching_ground:
 		if process_input and Input.is_action_pressed(input_actions["forward"]):
 			current_speed = min(current_speed + ACCELERATION * delta, MAX_SPEED)
 		else:
 			current_speed = max(current_speed - ACCELERATION * delta, 0.0)  # Decelerate.
 	else:
-		# In air: only apply air resistance if we recently hit a bounce pad
-		if air_resistance_timer > 0.0:
-			current_speed = max(current_speed - AIR_RESISTANCE * delta, 0.0)  # Air resistance after bounce pad only
+		# In air: apply global air resistance to simulate realistic physics
+		current_speed = max(current_speed - AIR_RESISTANCE * delta, 0.0)
+		
+		# Apply additional air resistance if we recently hit a bounce pad
+		if bounce_pad_air_resistance_timer > 0.0:
+			current_speed = max(current_speed - BOUNCE_PAD_AIR_RESISTANCE * delta, 0.0)
 	
 	# Apply Cadence as an additive boost (up to +MAX_SPEED at 100%).
 	var cadence_boost: float = (cadence_bar.current_cadence / 100.0) * MAX_SPEED  # 0 to MAX_SPEED extra.
@@ -131,7 +180,7 @@ func apply_acceleration(delta: float, process_input: bool = true) -> void:
 	
 	# When wall riding, project movement along the wall surface
 	var is_wall_riding = abs(current_gravity_direction.x) > 0.1 or abs(current_gravity_direction.z) > 0.1
-	if is_wall_riding and is_on_floor():
+	if is_wall_riding and is_touching_ground():
 		# Get the wall normal (opposite of gravity direction for walls)
 		var wall_normal = -current_gravity_direction.normalized()
 		# Project forward direction onto the wall plane
@@ -160,7 +209,7 @@ func apply_dodge(direction: float) -> void:
 	if dodge_cooldowns[cooldown_key] > 0:
 		return  # On cooldown.
 	
-	var effective_strength = DODGE_STRENGTH if is_on_floor() else DODGE_STRENGTH * AIR_DODGE_MULTIPLIER
+	var effective_strength = DODGE_STRENGTH if is_touching_ground() else DODGE_STRENGTH * AIR_DODGE_MULTIPLIER
 	var right_direction := global_transform.basis.x.normalized()  # Local right.
 	velocity += right_direction * direction * effective_strength
 	dodge_cooldowns[cooldown_key] = DODGE_COOLDOWN  # Start cooldown.
@@ -173,12 +222,11 @@ func apply_gravity_and_jump(delta: float, process_input: bool = true) -> void:
 		velocity.y = 0.0  # No gravity/fall during grind (basic lock-in).
 		return
 	
-	if not is_on_floor():
+	if not is_touching_ground():
 		# Smooth gravity transition
 		if current_gravity_direction != target_gravity_direction:
 			current_gravity_direction = current_gravity_direction.lerp(target_gravity_direction, GRAVITY_TRANSITION_SPEED * delta)
 			current_gravity_direction = current_gravity_direction.normalized()
-			# print("Gravity transition: ", current_gravity_direction)
 			
 			# Rotate player to align with surface
 			if enable_wall_rotation:
@@ -190,14 +238,9 @@ func apply_gravity_and_jump(delta: float, process_input: bool = true) -> void:
 		# Apply wall gravity multiplier if there's any horizontal component
 		if abs(current_gravity_direction.x) > 0.01 or abs(current_gravity_direction.z) > 0.01:
 			gravity_strength *= WALL_GRAVITY_MULTIPLIER  # 4x stronger for wall riding
-			# print("Wall riding gravity applied: ", current_gravity_direction, " strength: ", gravity_strength)
 		
 		# Apply enhanced gravity multiplier from zones
 		gravity_strength *= current_gravity_multiplier
-		
-		# Debug: Show when enhanced gravity is active
-		# if current_gravity_multiplier > 1.1 and Engine.get_process_frames() % 30 == 0:
-		# 	print("ENHANCED GRAVITY ACTIVE! Multiplier: ", current_gravity_multiplier, " Total strength: ", gravity_strength)
 		
 		# Apply gravity
 		velocity += current_gravity_direction * gravity_strength * delta
@@ -212,10 +255,9 @@ func apply_gravity_and_jump(delta: float, process_input: bool = true) -> void:
 	if process_input and Input.is_action_just_pressed(input_actions["jump"]):
 		if is_grinding:
 			is_grinding = false  # Exit grind on jump.
-		if is_on_floor() or is_grinding:  # Allow jump from ground or grind.
+		if is_touching_ground() or is_grinding:  # Allow jump from ground or grind using enhanced detection.
 			velocity += up_direction * JUMP_VELOCITY
 			is_jumping = true
-			# print("GENERAL JUMP: Applied along ", up_direction, " velocity: ", JUMP_VELOCITY)
 
 # Function to check for grind/hazard collisions after move_and_slide().
 # Handles detection and state changes.
@@ -223,20 +265,12 @@ func apply_gravity_and_jump(delta: float, process_input: bool = true) -> void:
 func handle_collisions(collision_count: int) -> void:
 	is_grinding = false  # Reset each frame; re-detect if still valid.
 	
-	# Debug: print collision count
-	# if collision_count > 0:
-	# 	print("Collision count: ", collision_count, " | On floor: ", is_on_floor())
-	
 	for i in collision_count:
 		var collision = get_slide_collision(i)
 		var collider = collision.get_collider()
 		if not collider: continue
 		
-		# Debug: print what we're colliding with
-		# print("Colliding with: ", collider.name, " | Groups: ", collider.get_groups())
-		
 		if collider.is_in_group("grindable") and not is_on_floor():
-			# print("GRINDING ACTIVATED!")  # Debug
 			is_grinding = true  # Start/continue grinding if off-ground and hitting rail.
 			# Basic reward: Boost cadence slightly (tweak value for balance).
 			cadence_bar.current_cadence = min(cadence_bar.current_cadence + 5.0, cadence_bar.max_value)
@@ -285,36 +319,22 @@ func _connect_gravity_zones() -> void:
 	# Find all gravity zones in the scene
 	var zones = get_tree().get_nodes_in_group("gravity_zones")
 	var enhanced_zones = get_tree().get_nodes_in_group("enhanced_gravity_zones")
-	# print("Found ", zones.size(), " gravity zones and ", enhanced_zones.size(), " enhanced gravity zones in scene")
-	
-	# Debug: print all zones found
-	# for zone in zones:
-	# 	print("  - Regular zone: ", zone.name, " at ", zone.global_position)
-	# for zone in enhanced_zones:
-	# 	print("  - Enhanced zone: ", zone.name, " at ", zone.global_position)
 	
 	# Combine both zone types
 	zones.append_array(enhanced_zones)
 	
 	for zone in zones:
-		# print("Checking zone: ", zone.name, " - signals: ", zone.get_signal_list())
 		if zone.has_signal("gravity_flipped"):
 			zone.gravity_flipped.connect(_on_gravity_flipped)
-			# print("Connected to gravity zone: ", zone.name)
 		elif zone.has_signal("wall_riding_changed"):
 			zone.wall_riding_changed.connect(_on_gravity_flipped)
-			# print("Connected to wall riding zone: ", zone.name)
 		elif zone.has_signal("gravity_enhanced"):
 			zone.gravity_enhanced.connect(_on_gravity_enhanced)
-			# print("Connected to enhanced gravity zone: ", zone.name)
-		# else:
-		# 	print("Zone ", zone.name, " has no recognized gravity signals")
 
 ## Handles gravity direction changes from zones
 ## @param body The body entering the zone (should be this player)
 ## @param gravity_direction The new gravity direction vector
 func _on_gravity_flipped(body: Node3D, gravity_direction: Vector3) -> void:
-	# print("Gravity signal received - Body: ", body.name, " Target gravity: ", gravity_direction)
 	if body == self:
 		target_gravity_direction = gravity_direction.normalized()
 		# For wall riding (horizontal gravity), make transition instant and add initial pull
@@ -322,17 +342,12 @@ func _on_gravity_flipped(body: Node3D, gravity_direction: Vector3) -> void:
 			current_gravity_direction = target_gravity_direction
 			var initial_pull = 5.0  # Initial velocity towards wall
 			velocity += target_gravity_direction * initial_pull
-			# print("Wall riding started - instant gravity: ", current_gravity_direction, " initial pull: ", initial_pull)
-		# print("✓ GRAVITY CHANGING to: ", target_gravity_direction)
-	# else:
-	# 	print("✗ Body is not player, ignoring signal")
 
 ## Handles enhanced gravity from zones that modify gravity strength
 ## @param body The body entering the zone (should be this player)
 ## @param gravity_direction The gravity direction vector
 ## @param gravity_multiplier The strength multiplier for gravity
 func _on_gravity_enhanced(body: Node3D, gravity_direction: Vector3, gravity_multiplier: float) -> void:
-	# print("Enhanced gravity signal - Body: ", body.name, " Direction: ", gravity_direction, " Multiplier: ", gravity_multiplier)
 	if body == self:
 		# Update gravity direction if specified
 		if gravity_direction != Vector3.ZERO:
@@ -341,9 +356,6 @@ func _on_gravity_enhanced(body: Node3D, gravity_direction: Vector3, gravity_mult
 		
 		# Update gravity strength multiplier
 		current_gravity_multiplier = gravity_multiplier
-		# print("✓ ENHANCED GRAVITY - Direction: ", target_gravity_direction, " Multiplier: ", current_gravity_multiplier)
-	# else:
-	# 	print("✗ Body is not player, ignoring enhanced gravity signal")
 
 ## Smoothly aligns the player to the surface they're riding on
 ## @param delta Time delta for smooth interpolation
@@ -433,9 +445,6 @@ func _align_player_to_surface(delta: float) -> void:
 		global_position = global_position.lerp(target_transform.origin, lerp_factor)
 	
 	global_transform.basis = new_basis
-	
-	# if Engine.get_process_frames() % 30 == 0:  # Debug print every 30 frames
-	# 	print("Aligning player - Using anchor: ", use_anchor, " Lerp factor: ", lerp_factor)
 
 ## Handles wall riding collision behavior to prevent bouncing
 func _handle_wall_collisions() -> void:
@@ -454,15 +463,10 @@ func _handle_wall_collisions() -> void:
 			var velocity_away_from_wall = velocity.dot(normal)
 			if velocity_away_from_wall > 0:  # Moving away from wall
 				velocity -= normal * velocity_away_from_wall * 0.8  # Reduce bounce
-				# print("Wall contact - dampening bounce, wall normal: ", normal)
 
 func _physics_process(delta: float) -> void:
-	if not is_on_floor() and velocity.y == 0 and not is_jumping:  # Rare edge case check (ignore during jumps).
-		push_error("Physics error: Not on floor with zero Y velocity.")
-	
-	# Debug player position and gravity every few frames
-	# if Engine.get_process_frames() % 60 == 0:  # Every 60 frames (1 second at 60fps)
-	# 	print("Player position: ", global_position, " Current gravity: ", current_gravity_direction, " Multiplier: ", current_gravity_multiplier)
+	if not is_touching_ground() and velocity.y == 0 and not is_jumping:  # Updated to use enhanced ground detection
+		push_error("Physics error: Not touching ground with zero Y velocity.")
 	
 	# For multiplayer: only process input if we have authority over this player
 	var process_input = true
@@ -472,9 +476,9 @@ func _physics_process(delta: float) -> void:
 		process_input = false
 		# TODO: Add interpolation for remote players here
 	
-	# Decrement air resistance timer
-	if air_resistance_timer > 0.0:
-		air_resistance_timer -= delta
+	# Decrement bounce pad air resistance timer
+	if bounce_pad_air_resistance_timer > 0.0:
+		bounce_pad_air_resistance_timer -= delta
 	
 	# Decrement dodge cooldowns every frame.
 	for key in dodge_cooldowns:
@@ -486,7 +490,7 @@ func _physics_process(delta: float) -> void:
 	apply_acceleration(delta, process_input)
 	apply_turning(delta, turn_input)
 	
-	# Check for dodge inputs (works on ground or in air).
+	# Check for dodge inputs (works on ground or in air) - updated to use enhanced detection.
 	if process_input:
 		if Input.is_action_just_pressed(input_actions["dodge_left"]):
 			apply_dodge(-2.0)
@@ -550,28 +554,21 @@ func get_gravity_direction() -> Vector3:
 ## Sets the wall ride anchor for orientation
 func set_wall_ride_anchor(anchor: Area3D) -> void:
 	wall_ride_anchor = anchor
-	# print("Wall ride anchor set: ", anchor.name)
 
 ## Clears the wall ride anchor
 func clear_wall_ride_anchor(anchor: Area3D) -> void:
 	if wall_ride_anchor == anchor:
 		wall_ride_anchor = null
-		# print("Wall ride anchor cleared")
 
-## Activates air resistance for the specified duration (used by bounce pads)
+## Activates additional air resistance for the specified duration (used by bounce pads)
+## This adds extra air resistance on top of the global air resistance
 func activate_air_resistance() -> void:
-	air_resistance_timer = AIR_RESISTANCE_DURATION
-	# print("Air resistance activated for ", AIR_RESISTANCE_DURATION, " seconds")
+	bounce_pad_air_resistance_timer = AIR_RESISTANCE_DURATION
 
 ## Instantly snap the player's rotation to match the given gravity direction
 ## Used by gravity zones with snap alignment enabled
 ## @param gravity_direction The gravity vector to align against
 func snap_to_gravity_alignment(gravity_direction: Vector3) -> void:
-	# print("=== SNAP_TO_GRAVITY_ALIGNMENT CALLED ===")
-	# print("Gravity direction: ", gravity_direction)
-	# print("Current position: ", global_position)
-	# print("Current rotation: ", rotation_degrees)
-	
 	var new_up = -gravity_direction.normalized()
 	var current_forward = -global_transform.basis.z
 	
@@ -621,8 +618,6 @@ func snap_to_gravity_alignment(gravity_direction: Vector3) -> void:
 	# Ensure gravity directions are updated immediately
 	current_gravity_direction = gravity_direction.normalized()
 	target_gravity_direction = gravity_direction.normalized()
-	
-	# print("Player snapped to alignment - Up: ", new_up, " Scale preserved: ", original_scale)
 
 ## RPC function to receive player state from other players
 ## @param pos The position of the remote player

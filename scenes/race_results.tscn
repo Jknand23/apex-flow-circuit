@@ -1,0 +1,111 @@
+[gd_scene load_steps=3 format=3 uid="uid://bw8x5n2m9qr3k"]
+
+[ext_resource type="Script" path="res://scripts/race_results_screen.gd" id="1_results_script"]
+
+[sub_resource type="Theme" id="Theme_results"]
+
+[node name="RaceResults" type="CanvasLayer"]
+layer = 100
+process_mode = 3
+script = ExtResource("1_results_script")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Overlay" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="ResultsPanel" type="Panel" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Control/ResultsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" type="Label" parent="Control/ResultsPanel/VBox"]
+layout_mode = 2
+theme = SubResource("Theme_results")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 48
+text = "RACE COMPLETE!"
+horizontal_alignment = 1
+
+[node name="TimeLabel" type="Label" parent="Control/ResultsPanel/VBox"]
+layout_mode = 2
+theme = SubResource("Theme_results")
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 32
+text = "Total Time: 02:34.567"
+horizontal_alignment = 1
+
+[node name="BestLapLabel" type="Label" parent="Control/ResultsPanel/VBox"]
+layout_mode = 2
+theme = SubResource("Theme_results")
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+theme_override_font_sizes/font_size = 24
+text = "Best Lap: 00:48.123"
+horizontal_alignment = 1
+
+[node name="LapTimesLabel" type="Label" parent="Control/ResultsPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = SubResource("Theme_results")
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 18
+text = "Lap Times:
+Lap 1: 00:52.345
+Lap 2: 00:48.123
+Lap 3: 00:54.099"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="Control/ResultsPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="RestartButton" type="Button" parent="Control/ResultsPanel/VBox/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+process_mode = 3
+theme_override_font_sizes/font_size = 24
+text = "RESTART RACE"
+
+[node name="MenuButton" type="Button" parent="Control/ResultsPanel/VBox/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+process_mode = 3
+theme_override_font_sizes/font_size = 24
+text = "MAIN MENU" 
