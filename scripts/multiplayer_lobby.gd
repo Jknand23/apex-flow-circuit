@@ -102,7 +102,7 @@ func _setup_as_host() -> void:
 		player1_char_select.disabled = false
 		player1_ready_btn.disabled = false
 	else:
-		print_error("Failed to create server.")
+		push_error("Failed to create server.")
 
 # Setup lobby as client
 func _setup_as_client() -> void:
