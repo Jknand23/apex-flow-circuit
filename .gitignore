@@ -24,3 +24,7 @@ Thumbs.db
 node_modules/
 
 # Note: .import files should be committed for asset consistency across clones.
+
+builds/
+ApexFlowCircuit.zip
+ApexFlowCircuit.exe

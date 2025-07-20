@@ -18,10 +18,11 @@
 
 1. Open Godot and load your project
 2. Go to Project → Export
-3. You'll see three presets already configured:
+3. You'll see four presets already configured:
    - Windows Desktop
    - Linux/X11
    - Web
+   - macOS
 
 4. For each platform:
    - Select the preset
@@ -30,6 +31,7 @@
      - Windows: `builds/windows/ApexFlowCircuit.exe`
      - Linux: `builds/linux/ApexFlowCircuit.x86_64`
      - Web: `builds/web/index.html`
+     - macOS: `builds/macos/ApexFlowCircuit.zip`
 
 ### Step 2: Prepare Files for Upload
 
@@ -47,6 +49,11 @@
    - Navigate to `builds/web/`
    - Create a ZIP file containing ALL files (index.html, .js, .wasm, .pck files)
    - Name it: `ApexFlowCircuit-Web.zip`
+
+4. **macOS Build**:
+   - The macOS export already creates a ZIP file
+   - It will be at `builds/macos/ApexFlowCircuit.zip`
+   - This contains the .app bundle
 
 ## Publishing on itch.io
 
@@ -70,6 +77,7 @@
    - For each file, set the platform:
      - Windows: Check "Windows"
      - Linux: Check "Linux"
+     - macOS: Check "macOS"
      - Web: Check "This file will be played in the browser"
    - Mark Windows as the default download
 

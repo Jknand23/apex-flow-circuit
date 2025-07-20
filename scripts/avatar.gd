@@ -14,6 +14,11 @@ func _ready():
 	
 	# Pre-create mesh instances for each skin if this becomes necessary
 	# _create_skin_mesh_instances()
+	apply_squat_pose(0.8)  # Adjust intensity (0.0-1.0) for subtlety
+	
+	# Adjust character position to be better centered on board
+	if model_instance:
+		model_instance.position.z -= 0.01  # Move character back on board
 
 # Function to set position offset for board riding.
 # @param offset: Vector3 - Adjustment for feet-on-board (e.g., Vector3(0, board_height + 0.1, 0)).
@@ -343,3 +348,114 @@ func _apply_skin_to_mesh(mesh: MeshInstance3D, skin_path: String) -> void:
 	new_material.resource_local_to_scene = true
 	
 	mesh.set_surface_override_material(0, new_material)
+
+## Applies a static squat pose to the character model
+## This runs once in _ready() to set a fixed riding position on the board
+## @param squat_intensity: float - Strength of the squat (0.0 = no squat, 1.0 = full bend)
+func apply_squat_pose(squat_intensity: float = 1.0) -> void:
+	if not model_instance:
+		_find_character_model()
+		if not model_instance:
+			push_error("Cannot apply pose - character model not found")
+			return
+	
+	# Find the Skeleton3D (recursive search in case of nesting)
+	var skeleton: Skeleton3D = _find_skeleton_recursive(model_instance)
+	if not skeleton:
+		push_error("Skeleton3D not found in character model")
+		return
+	
+	# Debug: List all bone names
+	print("=== LISTING ALL BONES IN SKELETON ===")
+	for i in range(skeleton.get_bone_count()):
+		var bone_name = skeleton.get_bone_name(i)
+		print("Bone ", i, ": ", bone_name)
+	print("=== END BONE LIST ===")
+	
+	# Map of bones to their rotation adjustments (use your model's exact bone names)
+	# Trying common bone name patterns for Kenney models
+	var bone_adjustments = {
+		# The key is to maintain hip height while bending knees
+		# For a proper skateboard stance:
+		# - Slight knee bend (not too deep)
+		# - Lean forward slightly at spine
+		# - Arms relaxed at sides
+		# - Feet flat on board
+		
+		# Try without mixamorig prefix first
+		"Hips": Vector3(0, 0, 0),  # Hip rotation for wider stance
+		"Spine": Vector3(deg_to_rad(10) * squat_intensity, 0, 0),  # Slight forward lean
+		"Spine1": Vector3(deg_to_rad(5) * squat_intensity, 0, 0),  # Additional spine bend
+		"LeftUpLeg": Vector3(deg_to_rad(-15) * squat_intensity, deg_to_rad(-10) * squat_intensity, deg_to_rad(-7) * squat_intensity),  # Reduced Y rotation
+		"RightUpLeg": Vector3(deg_to_rad(-15) * squat_intensity, deg_to_rad(10) * squat_intensity, deg_to_rad(7) * squat_intensity),  # Reduced Y rotation
+		"LeftLeg": Vector3(deg_to_rad(20) * squat_intensity, 0, 0),  # Just bend forward
+		"RightLeg": Vector3(deg_to_rad(20) * squat_intensity, 0, 0),  # Just bend forward
+		"LeftFoot": Vector3(deg_to_rad(-5) * squat_intensity, deg_to_rad(5) * squat_intensity, 0),  # Slight inward rotation
+		"RightFoot": Vector3(deg_to_rad(-5) * squat_intensity, deg_to_rad(-5) * squat_intensity, 0),  # Slight inward rotation
+		"LeftArm": Vector3(0, 0, deg_to_rad(-20) * squat_intensity),  # Arms straight down at sides
+		"RightArm": Vector3(0, 0, deg_to_rad(20) * squat_intensity),  # Arms straight down at sides
+		"LeftForeArm": Vector3(0, 0, 0),  # Keep forearms straight
+		"RightForeArm": Vector3(0, 0, 0),  # Keep forearms straight
+		
+		# Alternative names with mixamorig prefix
+		"mixamorig:Hips": Vector3(0, 0, 0),
+		"mixamorig:Spine": Vector3(deg_to_rad(10) * squat_intensity, 0, 0),
+		"mixamorig:Spine1": Vector3(deg_to_rad(5) * squat_intensity, 0, 0),
+		"mixamorig:LeftUpLeg": Vector3(deg_to_rad(-15) * squat_intensity, deg_to_rad(-10) * squat_intensity, deg_to_rad(-7) * squat_intensity),
+		"mixamorig:RightUpLeg": Vector3(deg_to_rad(-15) * squat_intensity, deg_to_rad(10) * squat_intensity, deg_to_rad(7) * squat_intensity),
+		"mixamorig:LeftLeg": Vector3(deg_to_rad(20) * squat_intensity, 0, 0),
+		"mixamorig:RightLeg": Vector3(deg_to_rad(20) * squat_intensity, 0, 0),
+		"mixamorig:LeftFoot": Vector3(deg_to_rad(-5) * squat_intensity, deg_to_rad(5) * squat_intensity, 0),
+		"mixamorig:RightFoot": Vector3(deg_to_rad(-5) * squat_intensity, deg_to_rad(-5) * squat_intensity, 0),
+		"mixamorig:LeftArm": Vector3(0, 0, deg_to_rad(-20) * squat_intensity),
+		"mixamorig:RightArm": Vector3(0, 0, deg_to_rad(20) * squat_intensity),
+		"mixamorig:LeftForeArm": Vector3(0, 0, 0),
+		"mixamorig:RightForeArm": Vector3(0, 0, 0),
+		
+		# Try more variations
+		"Pelvis": Vector3(0, 0, 0),  # Alternative hip name
+		"UpperLeg_L": Vector3(deg_to_rad(-15) * squat_intensity, deg_to_rad(-10) * squat_intensity, deg_to_rad(-7) * squat_intensity),
+		"UpperLeg_R": Vector3(deg_to_rad(-15) * squat_intensity, deg_to_rad(10) * squat_intensity, deg_to_rad(7) * squat_intensity),
+		"LowerLeg_L": Vector3(deg_to_rad(20) * squat_intensity, 0, 0),
+		"LowerLeg_R": Vector3(deg_to_rad(20) * squat_intensity, 0, 0),
+		"Foot_L": Vector3(deg_to_rad(-5) * squat_intensity, deg_to_rad(5) * squat_intensity, 0),
+		"Foot_R": Vector3(deg_to_rad(-5) * squat_intensity, deg_to_rad(-5) * squat_intensity, 0),
+		"UpperArm_L": Vector3(0, 0, deg_to_rad(-20) * squat_intensity),
+		"UpperArm_R": Vector3(0, 0, deg_to_rad(20) * squat_intensity),
+		"LowerArm_L": Vector3(0, 0, 0),
+		"LowerArm_R": Vector3(0, 0, 0)
+	}
+	
+	# Don't modify the character's position - just adjust the bones
+	# The board position should remain unchanged
+	
+	var bones_found = 0
+	for bone_name in bone_adjustments:
+		var bone_id = skeleton.find_bone(bone_name)
+		if bone_id == -1:
+			continue  # Skip if not found
+		
+		bones_found += 1
+		print("Found bone: ", bone_name, " (ID: ", bone_id, ")")
+		
+		# Get current pose and apply adjustment
+		var current_pose = skeleton.get_bone_pose_rotation(bone_id)
+		var adjustment = bone_adjustments[bone_name]
+		skeleton.set_bone_pose_rotation(bone_id, current_pose * Quaternion.from_euler(adjustment))
+		
+	if bones_found > 0:
+		print("Squat pose applied with intensity: ", squat_intensity, " (", bones_found, " bones adjusted)")
+	else:
+		push_warning("No matching bones found for squat pose")
+
+## Helper to find Skeleton3D recursively
+## @param node: Node - Starting node to search from
+## @return Skeleton3D or null
+func _find_skeleton_recursive(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node
+	for child in node.get_children():
+		var result = _find_skeleton_recursive(child)
+		if result:
+			return result
+	return null

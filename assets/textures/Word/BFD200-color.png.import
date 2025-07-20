@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://28wnqp6b5vu1"
 path.s3tc="res://.godot/imported/BFD200-color.png-65bd6f9bb1f422b4760e5263a6b4b5fe.s3tc.ctex"
+path.etc2="res://.godot/imported/BFD200-color.png-65bd6f9bb1f422b4760e5263a6b4b5fe.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/Word/BFD200-color.png"
-dest_files=["res://.godot/imported/BFD200-color.png-65bd6f9bb1f422b4760e5263a6b4b5fe.s3tc.ctex"]
+dest_files=["res://.godot/imported/BFD200-color.png-65bd6f9bb1f422b4760e5263a6b4b5fe.s3tc.ctex", "res://.godot/imported/BFD200-color.png-65bd6f9bb1f422b4760e5263a6b4b5fe.etc2.ctex"]
 
 [params]
 

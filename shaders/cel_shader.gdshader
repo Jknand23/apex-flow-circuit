@@ -13,6 +13,6 @@ void light() {
     float NdotL = dot(NORMAL, LIGHT);
     float cel_light = floor(NdotL * cel_levels) / cel_levels;
     cel_light = max(cel_light, 0.1);
-    
+
     DIFFUSE_LIGHT += cel_light * LIGHT_COLOR * ATTENUATION;
 }

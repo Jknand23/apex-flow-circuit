@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://j4jaxw43ifpq"
 path.s3tc="res://.godot/imported/variation-a.png-060d5c096f4958de66b19149f1bd1443.s3tc.ctex"
+path.etc2="res://.godot/imported/variation-a.png-060d5c096f4958de66b19149f1bd1443.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/textures/environments/roads/variation-a.png"
-dest_files=["res://.godot/imported/variation-a.png-060d5c096f4958de66b19149f1bd1443.s3tc.ctex"]
+dest_files=["res://.godot/imported/variation-a.png-060d5c096f4958de66b19149f1bd1443.s3tc.ctex", "res://.godot/imported/variation-a.png-060d5c096f4958de66b19149f1bd1443.etc2.ctex"]
 
 [params]
 
