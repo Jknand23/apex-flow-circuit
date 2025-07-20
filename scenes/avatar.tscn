@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bavatar"]
 
-[ext_resource type="PackedScene" uid="uid://bcharacter" path="res://assets/models/avatars/characterMedium.fbx" id="1_character"]
+[ext_resource type="PackedScene" path="res://assets/models/avatars/characterMedium.fbx" id="1_character"]
 [ext_resource type="Script" path="res://scripts/avatar.gd" id="2_avatar_script"]
 
 [node name="Avatar" type="Node3D"]

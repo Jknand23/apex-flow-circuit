@@ -70,44 +70,28 @@ func _setup_as_host() -> void:
 	lobby_code = str(randi() % 900000 + 100000)  # 6-digit code
 	code_label.text = lobby_code
 	
-	# Display host IP address for clients to connect
+	# Display host IP address for clients on the same network to connect
 	var host_ip = _get_local_ip_address()
 	if ip_label:
 		ip_label.text = host_ip
 	
-	print("=== HOST LOBBY SETUP DEBUG ===")
-	print("Generated lobby code: ", lobby_code)
-	print("Host IP address: ", host_ip)
+	print("=== HOST LOBBY SETUP ===")
+	print("Lobby Code: %s | Host IP: %s" % [lobby_code, host_ip])
 	
 	# Create server
 	var peer = ENetMultiplayerPeer.new()
-	var port = DEFAULT_PORT + (int(lobby_code) % 58535)  # Use code to offset port, keep within valid range (7000-65535)
+	var port = DEFAULT_PORT + (int(lobby_code) % 58535)
 	var result = peer.create_server(port, MAX_CLIENTS)
 	
 	if result == OK:
 		multiplayer.multiplayer_peer = peer
-		print("Server started on port %d with lobby code %s" % [port, lobby_code])
-		print("Clients should connect to: %s:%d" % [host_ip, port])
+		print("Server started on port %d" % port)
 		
-		# Register lobby with the lobby service for automatic discovery
-		if LobbyService:
-			LobbyService.register_lobby(lobby_code, port, func(success: bool, message: String):
-				if success:
-					print("Lobby registered with discovery service")
-				else:
-					print("Failed to register lobby: ", message)
-					# Still continue - manual IP entry will still work
-			)
-		
-		# Add host to players
+		# Add host to players list
 		var host_id = multiplayer.get_unique_id()
 		players[host_id] = {"name": "Host", "character": 0, "ready": false}
 		player_ready_status[host_id] = false
 		player_characters[host_id] = 0
-		
-		print("Host player ID: ", host_id)
-		print("Initial players data: ", players)
-		print("Initial player_characters: ", player_characters)
 		
 		# Update UI
 		player1_label.text = "PLAYER 1 (HOST)"
@@ -117,11 +101,8 @@ func _setup_as_host() -> void:
 		# Enable host controls
 		player1_char_select.disabled = false
 		player1_ready_btn.disabled = false
-		print("Host controls enabled")
 	else:
-		print("Failed to create server: %d" % result)
-	
-	print("=== END HOST LOBBY SETUP DEBUG ===")
+		print_error("Failed to create server.")
 
 # Setup lobby as client
 func _setup_as_client() -> void:
@@ -357,33 +338,21 @@ func _on_start_pressed() -> void:
 		_start_game.rpc()
 		print("=== END STARTING GAME DEBUG ===")
 
+# Called when the host clicks the leave button.
 func _on_leave_pressed() -> void:
-	# Unregister lobby if we're the host
-	if is_host and LobbyService:
-		LobbyService.unregister_lobby(lobby_code)
-		print("Unregistered lobby from discovery service")
-	
 	# Clean up network connection and reset state
 	GameManager.reset_multiplayer_state()
-	
 	# Return to multiplayer menu
-	get_tree().change_scene_to_file("res://scenes/multiplayer_menu.tscn") 
+	get_tree().change_scene_to_file("res://scenes/multiplayer_menu.tscn")
 
 # Get the local IP address of this machine
 func _get_local_ip_address() -> String:
 	var ip_addresses = IP.get_local_addresses()
-	
-	# Look for a non-loopback IPv4 address
 	for ip in ip_addresses:
-		# Skip localhost
-		if ip == "127.0.0.1":
-			continue
-		# Look for typical local network IPs
 		if ip.begins_with("192.168.") or ip.begins_with("10.") or ip.begins_with("172."):
 			return ip
-		# Also accept other IPv4 addresses
-		if "." in ip and not ":" in ip:
+	# Fallback for other network configurations or localhost
+	for ip in ip_addresses:
+		if not ip.contains(":") and ip != "127.0.0.1":
 			return ip
-	
-	# Fallback to localhost if no local network IP found
 	return "127.0.0.1" 
