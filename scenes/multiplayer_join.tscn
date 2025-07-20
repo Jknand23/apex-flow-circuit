@@ -42,7 +42,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 theme_override_font_sizes/font_size = 20
-text = "Enter the lobby code to join"
+text = "Enter the host IP and lobby code to join"
 horizontal_alignment = 1
 
 [node name="JoinContainer" type="VBoxContainer" parent="."]
@@ -53,12 +53,40 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -200.0
-offset_top = -100.0
+offset_top = -120.0
 offset_right = 200.0
-offset_bottom = 100.0
+offset_bottom = 120.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 15
+
+[node name="OfficialServerContainer" type="VBoxContainer" parent="JoinContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="OfficialServerButton" type="Button" parent="JoinContainer/OfficialServerContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "CONNECT TO OFFICIAL SERVER"
+
+[node name="OrLabel" type="Label" parent="JoinContainer/OfficialServerContainer"]
+layout_mode = 2
+text = "--- OR ---"
+horizontal_alignment = 1
+
+
+[node name="IPLabel" type="Label" parent="JoinContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "JOIN PRIVATE GAME (LAN/IP):"
+horizontal_alignment = 1
+
+[node name="IPInput" type="LineEdit" parent="JoinContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+placeholder_text = "Leave empty for automatic (or enter host IP)"
+alignment = 1
+caret_blink = true
 
 [node name="CodeLabel" type="Label" parent="JoinContainer"]
 layout_mode = 2
@@ -99,6 +127,8 @@ theme_override_font_sizes/font_size = 20
 text = "JOIN"
 disabled = true
 
+[connection signal="pressed" from="JoinContainer/OfficialServerContainer/OfficialServerButton" to="." method="_on_official_server_pressed"]
+[connection signal="text_changed" from="JoinContainer/IPInput" to="." method="_on_ip_input_text_changed"]
 [connection signal="text_changed" from="JoinContainer/CodeInput" to="." method="_on_code_input_text_changed"]
 [connection signal="pressed" from="JoinContainer/ButtonContainer/BackButton" to="." method="_on_back_pressed"]
 [connection signal="pressed" from="JoinContainer/ButtonContainer/JoinButton" to="." method="_on_join_pressed"] 

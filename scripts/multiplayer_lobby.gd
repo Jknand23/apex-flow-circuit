@@ -25,6 +25,7 @@ var character_options = [
 
 # UI References
 @onready var code_label = $TitleContainer/LobbyCodeContainer/CodeValue
+@onready var ip_label = $TitleContainer/IPAddressContainer/IPValue
 @onready var player1_status = $PlayersContainer/Player1Slot/VBoxContainer/StatusLabel
 @onready var player2_status = $PlayersContainer/Player2Slot/VBoxContainer/StatusLabel
 @onready var player1_char_container = $PlayersContainer/Player1Slot/VBoxContainer/CharacterContainer
@@ -69,8 +70,14 @@ func _setup_as_host() -> void:
 	lobby_code = str(randi() % 900000 + 100000)  # 6-digit code
 	code_label.text = lobby_code
 	
+	# Display host IP address for clients to connect
+	var host_ip = _get_local_ip_address()
+	if ip_label:
+		ip_label.text = host_ip
+	
 	print("=== HOST LOBBY SETUP DEBUG ===")
 	print("Generated lobby code: ", lobby_code)
+	print("Host IP address: ", host_ip)
 	
 	# Create server
 	var peer = ENetMultiplayerPeer.new()
@@ -80,6 +87,17 @@ func _setup_as_host() -> void:
 	if result == OK:
 		multiplayer.multiplayer_peer = peer
 		print("Server started on port %d with lobby code %s" % [port, lobby_code])
+		print("Clients should connect to: %s:%d" % [host_ip, port])
+		
+		# Register lobby with the lobby service for automatic discovery
+		if LobbyService:
+			LobbyService.register_lobby(lobby_code, port, func(success: bool, message: String):
+				if success:
+					print("Lobby registered with discovery service")
+				else:
+					print("Failed to register lobby: ", message)
+					# Still continue - manual IP entry will still work
+			)
 		
 		# Add host to players
 		var host_id = multiplayer.get_unique_id()
@@ -340,8 +358,32 @@ func _on_start_pressed() -> void:
 		print("=== END STARTING GAME DEBUG ===")
 
 func _on_leave_pressed() -> void:
+	# Unregister lobby if we're the host
+	if is_host and LobbyService:
+		LobbyService.unregister_lobby(lobby_code)
+		print("Unregistered lobby from discovery service")
+	
 	# Clean up network connection and reset state
 	GameManager.reset_multiplayer_state()
 	
 	# Return to multiplayer menu
 	get_tree().change_scene_to_file("res://scenes/multiplayer_menu.tscn") 
+
+# Get the local IP address of this machine
+func _get_local_ip_address() -> String:
+	var ip_addresses = IP.get_local_addresses()
+	
+	# Look for a non-loopback IPv4 address
+	for ip in ip_addresses:
+		# Skip localhost
+		if ip == "127.0.0.1":
+			continue
+		# Look for typical local network IPs
+		if ip.begins_with("192.168.") or ip.begins_with("10.") or ip.begins_with("172."):
+			return ip
+		# Also accept other IPv4 addresses
+		if "." in ip and not ":" in ip:
+			return ip
+	
+	# Fallback to localhost if no local network IP found
+	return "127.0.0.1" 

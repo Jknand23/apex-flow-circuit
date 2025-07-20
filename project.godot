@@ -11,14 +11,19 @@ config_version=5
 [application]
 
 config/name="Apex Flow Circuit"
-run/main_scene="res://scenes/main_menu.tscn"
+run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
+main_scene.windows="res://scenes/main.tscn"
+main_scene.macos="res://scenes/main.tscn"
+main_scene.x11="res://scenes/main.tscn"
+main_scene.dedicated_server="res://scenes/server_main.tscn"
 
 [autoload]
 
 GameManager="*res://scripts/globals/game_manager.gd"
 RaceManager="*res://scripts/globals/race_manager.gd"
+LobbyService="*res://scripts/lobby_service.gd"
 
 [global_group]
 
